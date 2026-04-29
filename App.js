@@ -13,6 +13,7 @@ import AnalyzeScreen from "./screens/AnalyzeScreen";
 import ResultScreen from "./screens/ResultScreen";
 import HistoryScreen from "./screens/HistoryScreen";
 import TreatmentScreen from "./screens/TreatmentScreen";
+import CropProtocolScreen from "./app/(tabs)/CropProtocolScreen.jsx";
 import { Colors, Typography, Spacing, Shadow } from "./constants/theme";
 
 const Stack = createStackNavigator();
@@ -141,6 +142,12 @@ export default function App() {
                   </TouchableOpacity>
                 ),
               })}
+            />
+
+            <Stack.Screen
+              name="CropProtocol"
+              component={CropProtocolScreen}
+              options={{ headerShown: false }}
             />
           </Stack.Navigator>
         </NavigationContainer>
