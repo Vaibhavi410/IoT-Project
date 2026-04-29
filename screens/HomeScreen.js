@@ -183,6 +183,36 @@ export default function HomeScreen({ navigation }) {
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.treatmentBtn, { marginTop: Spacing.md }]}
+            onPress={() => navigation.navigate("CropProtocol")}
+            activeOpacity={0.8}
+          >
+            <View style={styles.treatmentIconBox}>
+              <Text style={{ fontSize: 24 }}>🌾</Text>
+            </View>
+            <View style={styles.treatmentBtnInfo}>
+              <Text style={styles.treatmentBtnTitle}>Crop Protocol</Text>
+              <Text style={styles.treatmentBtnSub}>Stages, risks, and prevention schedule</Text>
+            </View>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.treatmentBtn, { marginTop: Spacing.md }]}
+            onPress={() => navigation.navigate("WeatherAdvisory")}
+            activeOpacity={0.8}
+          >
+            <View style={styles.treatmentIconBox}>
+              <Text style={{ fontSize: 24 }}>🌦️</Text>
+            </View>
+            <View style={styles.treatmentBtnInfo}>
+              <Text style={styles.treatmentBtnTitle}>Weather Advisory</Text>
+              <Text style={styles.treatmentBtnSub}>Pest risk forecast and spraying guidance</Text>
+            </View>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Recent Scans */}

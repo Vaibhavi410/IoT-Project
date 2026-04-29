@@ -37,6 +37,20 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="cross.fill" color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="CropProtocolScreen"
+        options={{
+          title: 'Crop Protocol',
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="WeatherAdvisoryScreen"
+        options={{
+          title: 'Weather Advisory',
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

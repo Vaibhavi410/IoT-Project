@@ -26,6 +26,14 @@ export default function HomeScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
+          style={[styles.card, { backgroundColor: '#E8F5E9' }]}
+          onPress={() => router.push('/(tabs)/CropProtocolScreen')}
+        >
+          <Text style={styles.cardTitle}>🌾 Crop Protocol</Text>
+          <Text style={styles.cardSubtitle}>Stages, risks, and pest guidance by crop</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
           style={{
             backgroundColor: '#2E7D32',
             margin: 16,
@@ -60,10 +68,9 @@ export default function HomeScreen() {
 
         <TouchableOpacity
           style={[styles.card, { backgroundColor: '#E3F2FD' }]}
-          onPress={() => alert('Coming soon!')}
+          onPress={() => router.push('/(tabs)/WeatherAdvisoryScreen')}
         >
-          <Text style={styles.cardIcon}>🌦️</Text>
-          <Text style={styles.cardTitle}>Weather Advisory</Text>
+          <Text style={styles.cardTitle}>🌦️ Weather Advisory</Text>
           <Text style={styles.cardSubtitle}>Pest outbreak forecast</Text>
         </TouchableOpacity>
 
