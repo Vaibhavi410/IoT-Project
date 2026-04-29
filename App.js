@@ -12,6 +12,7 @@ import HomeScreen from "./screens/HomeScreen";
 import AnalyzeScreen from "./screens/AnalyzeScreen";
 import ResultScreen from "./screens/ResultScreen";
 import HistoryScreen from "./screens/HistoryScreen";
+import TreatmentScreen from "./screens/TreatmentScreen";
 import { Colors, Typography, Spacing, Shadow } from "./constants/theme";
 
 const Stack = createStackNavigator();
@@ -122,6 +123,23 @@ export default function App() {
                   </TouchableOpacity>
                 ),
                 headerRight: () => null,
+              })}
+            />
+
+            {/* Treatment Screen */}
+            <Stack.Screen
+              name="Treatment"
+              component={TreatmentScreen}
+              options={({ navigation }) => ({
+                title: "Treatment Plan",
+                headerLeft: () => (
+                  <TouchableOpacity
+                    onPress={() => navigation.goBack()}
+                    style={styles.backBtn}
+                  >
+                    <Text style={styles.backBtnText}>‹ Back</Text>
+                  </TouchableOpacity>
+                ),
               })}
             />
           </Stack.Navigator>

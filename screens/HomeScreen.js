@@ -167,6 +167,24 @@ export default function HomeScreen({ navigation }) {
           <StatCard icon="⚡" label="AI Speed" value="~5s" />
         </View>
 
+        {/* Treatment Plan Feature */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.treatmentBtn}
+            onPress={() => navigation.navigate("Treatment")}
+            activeOpacity={0.8}
+          >
+            <View style={styles.treatmentIconBox}>
+              <Text style={{ fontSize: 24 }}>💊</Text>
+            </View>
+            <View style={styles.treatmentBtnInfo}>
+              <Text style={styles.treatmentBtnTitle}>View Treatment Plan</Text>
+              <Text style={styles.treatmentBtnSub}>Tiered organic to chemical treatments</Text>
+            </View>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Recent Scans */}
         {recentScans.length > 0 && (
           <View style={styles.section}>
@@ -512,5 +530,37 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.sm,
     color: Colors.textSecondary,
     lineHeight: 20,
+  },
+  treatmentBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.white,
+    padding: Spacing.lg,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    ...Shadow.md,
+  },
+  treatmentIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.severityLow + "1A", // transparent green
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  treatmentBtnInfo: {
+    flex: 1,
+    paddingLeft: Spacing.md,
+  },
+  treatmentBtnTitle: {
+    fontSize: Typography.sizes.md,
+    fontWeight: Typography.weights.bold,
+    color: Colors.textPrimary,
+  },
+  treatmentBtnSub: {
+    fontSize: Typography.sizes.xs,
+    color: Colors.textMuted,
+    marginTop: 2,
   },
 });
