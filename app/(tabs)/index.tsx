@@ -68,6 +68,14 @@ export default function HomeScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
+          style={[styles.card, { backgroundColor: '#F1F8E9' }]}
+          onPress={() => router.push('/(tabs)/PestTimelineScreen')}
+        >
+          <Text style={styles.cardTitle}>📅 Pest Timeline</Text>
+          <Text style={styles.cardSubtitle}>Track pest activity on your farm over time</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
           style={[styles.card, { backgroundColor: '#FCE4EC' }]}
           onPress={() => alert('Coming soon!')}
         >
