@@ -14,6 +14,7 @@ import ResultScreen from "./screens/ResultScreen";
 import HistoryScreen from "./screens/HistoryScreen";
 import TreatmentScreen from "./screens/TreatmentScreen";
 import PestTimelineScreen from "./app/(tabs)/PestTimelineScreen.jsx";
+import PDFReportScreen from "./app/(tabs)/PDFReportScreen.jsx";
 import { Colors, Typography, Spacing, Shadow } from "./constants/theme";
 
 const Stack = createStackNavigator();
@@ -147,6 +148,12 @@ export default function App() {
             <Stack.Screen
               name="PestTimeline"
               component={PestTimelineScreen}
+              options={{ headerShown: false }}
+            />
+
+            <Stack.Screen
+              name="PDFReport"
+              component={PDFReportScreen}
               options={{ headerShown: false }}
             />
           </Stack.Navigator>

@@ -198,6 +198,21 @@ export default function HomeScreen({ navigation }) {
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.treatmentBtn, { marginTop: Spacing.md }]}
+            onPress={() => navigation.navigate("PDFReport")}
+            activeOpacity={0.8}
+          >
+            <View style={styles.treatmentIconBox}>
+              <Text style={{ fontSize: 24 }}>📄</Text>
+            </View>
+            <View style={styles.treatmentBtnInfo}>
+              <Text style={styles.treatmentBtnTitle}>📄 PDF Reports</Text>
+              <Text style={styles.treatmentBtnSub}>Auto-generate pest analysis PDF report</Text>
+            </View>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Recent Scans */}

@@ -44,6 +44,13 @@ export default function TabLayout() {
           href: null,
         }}
       />
+      <Tabs.Screen
+        name="PDFReportScreen"
+        options={{
+          title: 'PDF Reports',
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

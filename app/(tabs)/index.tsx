@@ -76,6 +76,14 @@ export default function HomeScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
+          style={[styles.card, { backgroundColor: '#FFFDE7' }]}
+          onPress={() => router.push('/(tabs)/PDFReportScreen')}
+        >
+          <Text style={styles.cardTitle}>📄 PDF Reports</Text>
+          <Text style={styles.cardSubtitle}>Auto-generate pest analysis PDF report</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
           style={[styles.card, { backgroundColor: '#FCE4EC' }]}
           onPress={() => alert('Coming soon!')}
         >
