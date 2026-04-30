@@ -37,6 +37,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="cross.fill" color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="LanguageScreen"
+        options={{
+          title: 'Language',
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

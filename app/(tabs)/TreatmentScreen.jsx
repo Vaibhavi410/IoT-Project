@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { COLORS } from '../../constants/colors';
 import TreatmentCard from '../../components/TreatmentCard';
+import { useLanguage } from '../../context/LanguageContext';
 
 // Dummy data for testing
 const pestData = {
@@ -44,6 +45,7 @@ const pestData = {
 };
 
 export default function TreatmentScreen() {
+  const { t } = useLanguage();
   // State to track which tier is expanded (1 is expanded by default)
   const [expandedTier, setExpandedTier] = useState(1);
   
@@ -79,13 +81,18 @@ export default function TreatmentScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <View style={styles.headerInfoContainer}>
-        <Text style={styles.title}>Treatment Plan</Text>
-        <Text style={styles.subtitle}>Target: {pestData.pest_name}</Text>
+        <Text style={styles.title}>{t('treatment')}</Text>
+        <Text style={styles.subtitle}>
+          {t('target_label')}: {pestData.pest_name}
+        </Text>
         
         {/* Progress indicator */}
         <View style={styles.progressContainer}>
           <Text style={styles.progressText}>
-            Progress: {currentTier === 'Complete' ? 'All Treatments Applied' : `Currently on Tier ${currentTier}`}
+            {t('progress_label')}:{' '}
+            {currentTier === 'Complete'
+              ? t('all_treatments_applied')
+              : `${t('currently_on_tier')} ${currentTier}`}
           </Text>
         </View>
       </View>

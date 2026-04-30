@@ -1,5 +1,5 @@
 // screens/HomeScreen.js
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -16,18 +16,19 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "@react-navigation/native";
 import { getScanHistory, formatTimestamp } from "../services/historyStorage";
 import { Colors, Typography, Spacing, Radius, Shadow } from "../constants/theme";
-
-const TIPS = [
-  "Take photos in daylight for better accuracy",
-  "Focus on the pest or damaged leaf area",
-  "Include both healthy and affected plant parts",
-  "Capture multiple angles if possible",
-  "Early detection saves up to 30% crop yield",
-];
+import LanguageSelector from "../components/LanguageSelector";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function HomeScreen({ navigation }) {
+  const { t } = useLanguage();
   const [recentScans, setRecentScans] = useState([]);
   const [tipIndex, setTipIndex] = useState(0);
+  const [langOpen, setLangOpen] = useState(false);
+
+  const tips = useMemo(
+    () => [t("tip_0"), t("tip_1"), t("tip_2"), t("tip_3"), t("tip_4")],
+    [t]
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -36,11 +37,12 @@ export default function HomeScreen({ navigation }) {
   );
 
   useEffect(() => {
+    if (!tips.length) return undefined;
     const interval = setInterval(() => {
-      setTipIndex((prev) => (prev + 1) % TIPS.length);
+      setTipIndex((prev) => (prev + 1) % tips.length);
     }, 4000);
     return () => clearInterval(interval);
-  }, []);
+  }, [tips.length]);
 
   async function loadHistory() {
     const history = await getScanHistory();
@@ -51,9 +53,9 @@ export default function HomeScreen({ navigation }) {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
       Alert.alert(
-        "Camera Permission",
-        "Pestify needs camera access to photograph pests. Please enable it in your device settings.",
-        [{ text: "OK" }]
+        t("camera_permission_title"),
+        t("camera_permission_message"),
+        [{ text: t("ok") }]
       );
       return;
     }
@@ -74,9 +76,9 @@ export default function HomeScreen({ navigation }) {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
       Alert.alert(
-        "Photo Access",
-        "Pestify needs access to your photos to analyze pest images.",
-        [{ text: "OK" }]
+        t("gallery_permission_title"),
+        t("gallery_permission_message"),
+        [{ text: t("ok") }]
       );
       return;
     }
@@ -103,10 +105,18 @@ export default function HomeScreen({ navigation }) {
         style={styles.header}
       >
         <View style={styles.headerContent}>
-          <View>
-            <Text style={styles.appName}>Pestify</Text>
-            <Text style={styles.tagline}>Protect your harvest with AI</Text>
+          <View style={styles.headerTitleBlock}>
+            <Text style={styles.appName}>{t("app_name")}</Text>
+            <Text style={styles.tagline}>{t("scan_tagline")}</Text>
           </View>
+          <TouchableOpacity
+            style={styles.langBtn}
+            onPress={() => setLangOpen(true)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityLabel="Language"
+          >
+            <Text style={styles.langBtnText}>🌐</Text>
+          </TouchableOpacity>
           <View style={styles.leafBadge}>
             <Text style={styles.leafEmoji}>🌿</Text>
           </View>
@@ -115,7 +125,7 @@ export default function HomeScreen({ navigation }) {
         {/* Tip carousel */}
         <View style={styles.tipBox}>
           <Text style={styles.tipIcon}>💡</Text>
-          <Text style={styles.tipText}>{TIPS[tipIndex]}</Text>
+          <Text style={styles.tipText}>{tips[tipIndex]}</Text>
         </View>
       </LinearGradient>
 
@@ -126,7 +136,7 @@ export default function HomeScreen({ navigation }) {
       >
         {/* Scan Buttons */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>IDENTIFY A PEST</Text>
+          <Text style={styles.sectionLabel}>{t("identify_section")}</Text>
           <View style={styles.scanButtons}>
             <TouchableOpacity
               style={[styles.scanBtn, styles.scanBtnPrimary]}
@@ -138,8 +148,8 @@ export default function HomeScreen({ navigation }) {
                 style={styles.scanBtnGradient}
               >
                 <Text style={styles.scanBtnIcon}>📷</Text>
-                <Text style={styles.scanBtnTitle}>Take Photo</Text>
-                <Text style={styles.scanBtnSub}>Use camera</Text>
+                <Text style={styles.scanBtnTitle}>{t("take_photo")}</Text>
+                <Text style={styles.scanBtnSub}>{t("use_camera")}</Text>
               </LinearGradient>
             </TouchableOpacity>
 
@@ -153,8 +163,8 @@ export default function HomeScreen({ navigation }) {
                 style={styles.scanBtnGradient}
               >
                 <Text style={styles.scanBtnIcon}>🖼️</Text>
-                <Text style={styles.scanBtnTitle}>From Gallery</Text>
-                <Text style={styles.scanBtnSub}>Pick image</Text>
+                <Text style={styles.scanBtnTitle}>{t("from_gallery")}</Text>
+                <Text style={styles.scanBtnSub}>{t("pick_image")}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
@@ -162,9 +172,13 @@ export default function HomeScreen({ navigation }) {
 
         {/* Stats Row */}
         <View style={styles.statsRow}>
-          <StatCard icon="🔍" label="Total Scans" value={recentScans.length > 0 ? "Active" : "0"} />
-          <StatCard icon="🌾" label="Crops Protected" value="∞" />
-          <StatCard icon="⚡" label="AI Speed" value="~5s" />
+          <StatCard
+            icon="🔍"
+            label={t("total_scans")}
+            value={recentScans.length > 0 ? t("active") : "0"}
+          />
+          <StatCard icon="🌾" label={t("crops_protected")} value="∞" />
+          <StatCard icon="⚡" label={t("ai_speed")} value="~5s" />
         </View>
 
         {/* Treatment Plan Feature */}
@@ -178,8 +192,8 @@ export default function HomeScreen({ navigation }) {
               <Text style={{ fontSize: 24 }}>💊</Text>
             </View>
             <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>View Treatment Plan</Text>
-              <Text style={styles.treatmentBtnSub}>Tiered organic to chemical treatments</Text>
+              <Text style={styles.treatmentBtnTitle}>{t("view_treatment_plan")}</Text>
+              <Text style={styles.treatmentBtnSub}>{t("treatment_sub")}</Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
@@ -189,9 +203,9 @@ export default function HomeScreen({ navigation }) {
         {recentScans.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionLabel}>RECENT SCANS</Text>
+              <Text style={styles.sectionLabel}>{t("recent_scans")}</Text>
               <TouchableOpacity onPress={() => navigation.navigate("History")}>
-                <Text style={styles.seeAll}>See All →</Text>
+                <Text style={styles.seeAll}>{t("see_all")}</Text>
               </TouchableOpacity>
             </View>
 
@@ -199,6 +213,7 @@ export default function HomeScreen({ navigation }) {
               <RecentScanCard
                 key={scan.id}
                 scan={scan}
+                t={t}
                 onPress={() =>
                   navigation.navigate("Result", {
                     result: scan.result,
@@ -213,17 +228,27 @@ export default function HomeScreen({ navigation }) {
 
         {/* Info Card */}
         <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>🧑‍🌾 How It Works</Text>
-          <InfoStep number="1" text="Photograph the pest or damaged crop area" />
-          <InfoStep number="2" text="AI analyzes the image in seconds" />
-          <InfoStep number="3" text="Get pest ID, severity level, and treatment plans" />
-          <InfoStep number="4" text="Apply organic or chemical treatments as needed" />
+          <Text style={styles.infoTitle}>🧑‍🌾 {t("how_it_works")}</Text>
+          <InfoStep number="1" text={t("how_step_1")} />
+          <InfoStep number="2" text={t("how_step_2")} />
+          <InfoStep number="3" text={t("how_step_3")} />
+          <InfoStep number="4" text={t("how_step_4")} />
         </View>
 
         <View style={{ height: 24 }} />
       </ScrollView>
+
+      <LanguageSelector visible={langOpen} onClose={() => setLangOpen(false)} />
     </View>
   );
+}
+
+/** Map API severity strings to translated labels. */
+function severityLabel(sev, t) {
+  if (!sev) return sev;
+  const map = { Low: "low", Moderate: "moderate", High: "high", Critical: "critical" };
+  const key = map[sev];
+  return key ? t(key) : sev;
 }
 
 function StatCard({ icon, label, value }) {
@@ -236,7 +261,7 @@ function StatCard({ icon, label, value }) {
   );
 }
 
-function RecentScanCard({ scan, onPress }) {
+function RecentScanCard({ scan, onPress, t }) {
   const { result, imageUri, timestamp } = scan;
   const isIdentified = result?.identified;
 
@@ -251,7 +276,7 @@ function RecentScanCard({ scan, onPress }) {
       )}
       <View style={styles.recentInfo}>
         <Text style={styles.recentName} numberOfLines={1}>
-          {isIdentified ? result.pestName : "Unidentified"}
+          {isIdentified ? result.pestName : t("unidentified")}
         </Text>
         {isIdentified && (
           <Text style={styles.recentScientific} numberOfLines={1}>
@@ -267,7 +292,7 @@ function RecentScanCard({ scan, onPress }) {
               ]}
             >
               <Text style={[styles.severityText, { color: getSeverityColor(result.severity) }]}>
-                {result.severity}
+                {severityLabel(result.severity, t)}
               </Text>
             </View>
           )}
@@ -323,6 +348,22 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: Spacing.lg,
+  },
+  headerTitleBlock: {
+    flex: 1,
+    paddingRight: Spacing.sm,
+  },
+  langBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: Spacing.sm,
+  },
+  langBtnText: {
+    fontSize: 22,
   },
   appName: {
     fontSize: Typography.sizes.xxxl,

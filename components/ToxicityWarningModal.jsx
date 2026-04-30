@@ -9,6 +9,7 @@ import {
   Animated,
 } from 'react-native';
 import { Colors, Typography, Spacing, Radius, Shadow } from '../constants/theme';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function ToxicityWarningModal({
   visible,
@@ -16,6 +17,7 @@ export default function ToxicityWarningModal({
   onConfirm,
   chemicalData,
 }) {
+  const { t } = useLanguage();
   const [pulseAnim] = useState(new Animated.Value(0));
 
   // Gear checklist states
@@ -111,7 +113,9 @@ export default function ToxicityWarningModal({
         >
           {/* Header Banner */}
           <View style={styles.headerBanner}>
-            <Text style={styles.headerBannerText}>⚠️ Chemical Treatment Warning</Text>
+            <Text style={styles.headerBannerText}>
+              ⚠️ {t('chemical_treatment_warning')}
+            </Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Text style={styles.closeButtonText}>✕</Text>
             </TouchableOpacity>
@@ -122,12 +126,14 @@ export default function ToxicityWarningModal({
             <View style={styles.titleSection}>
               <Text style={styles.chemicalName}>{chemicalData.chemical_name}</Text>
               <Text style={styles.activeIngredient}>
-                Active Ingredient: {chemicalData.active_ingredient}
+                {t('active_ingredient')}: {chemicalData.active_ingredient}
               </Text>
 
               <View style={styles.badgeRow}>
                 <View style={[styles.toxBadge, { backgroundColor: toxColor }]}>
-                  <Text style={styles.toxBadgeText}>{chemicalData.toxicity_level} TOXICITY</Text>
+                  <Text style={styles.toxBadgeText}>
+                    {chemicalData.toxicity_level} {t('toxicity_word')}
+                  </Text>
                 </View>
                 <View style={[styles.toxBadge, { backgroundColor: Colors.border }]}>
                   <Text style={[styles.toxBadgeText, { color: Colors.textPrimary }]}>
@@ -139,7 +145,7 @@ export default function ToxicityWarningModal({
 
             {/* Safety Gear */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>🛡️ Required Safety Gear</Text>
+              <Text style={styles.sectionTitle}>🛡️ {t('safety_gear')}</Text>
               {chemicalData.safety_gear.map(item => (
                 <TouchableOpacity
                   key={item}
@@ -157,56 +163,68 @@ export default function ToxicityWarningModal({
 
             {/* Intervals */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>⏳ Critical Intervals</Text>
+              <Text style={styles.sectionTitle}>⏳ {t('critical_intervals')}</Text>
               <View style={styles.intervalRow}>
-                <Text style={styles.intervalLabel}>Pre-Harvest Interval (PHI):</Text>
-                <Text style={styles.intervalValue}>{chemicalData.pre_harvest_interval} Days</Text>
+                <Text style={styles.intervalLabel}>{t('phi_label')}</Text>
+                <Text style={styles.intervalValue}>
+                  {chemicalData.pre_harvest_interval} {t('days_unit')}
+                </Text>
               </View>
               <View style={styles.intervalRow}>
-                <Text style={styles.intervalLabel}>Re-entry Interval (REI):</Text>
-                <Text style={styles.intervalValue}>{chemicalData.reentry_interval} Hours</Text>
+                <Text style={styles.intervalLabel}>{t('rei_label_modal')}</Text>
+                <Text style={styles.intervalValue}>
+                  {chemicalData.reentry_interval} {t('hours_unit')}
+                </Text>
               </View>
             </View>
 
             {/* First Aid */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>➕ First Aid</Text>
+              <Text style={styles.sectionTitle}>➕ {t('first_aid')}</Text>
               <Text style={styles.infoText}>
-                <Text style={styles.boldText}>Skin: </Text>{chemicalData.first_aid.skin_contact}
+                <Text style={styles.boldText}>{t('skin_contact_label')} </Text>
+                {chemicalData.first_aid.skin_contact}
               </Text>
               <Text style={styles.infoText}>
-                <Text style={styles.boldText}>Inhaled: </Text>{chemicalData.first_aid.if_inhaled}
+                <Text style={styles.boldText}>{t('inhaled_label')} </Text>
+                {chemicalData.first_aid.if_inhaled}
               </Text>
               <Text style={styles.infoText}>
-                <Text style={styles.boldText}>Swallowed: </Text>{chemicalData.first_aid.if_swallowed}
+                <Text style={styles.boldText}>{t('swallowed_label')} </Text>
+                {chemicalData.first_aid.if_swallowed}
               </Text>
             </View>
 
             {/* Environmental */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>🌍 Environmental Warning</Text>
+              <Text style={styles.sectionTitle}>🌍 {t('environmental_warning')}</Text>
               <Text style={styles.infoText}>
-                🐝 Danger to bees: {chemicalData.environmental.bees ? 'Yes' : 'No'}
+                🐝 {t('danger_bees')}{' '}
+                {chemicalData.environmental.bees ? t('yes') : t('no')}
               </Text>
               <Text style={styles.infoText}>
-                🐟 Danger to fish: {chemicalData.environmental.fish ? 'Yes' : 'No'}
+                🐟 {t('danger_fish')}{' '}
+                {chemicalData.environmental.fish ? t('yes') : t('no')}
               </Text>
               <Text style={styles.infoText}>
-                ☠️ Danger to birds: {chemicalData.environmental.birds ? 'Yes' : 'No'}
+                ☠️ {t('danger_birds')}{' '}
+                {chemicalData.environmental.birds ? t('yes') : t('no')}
               </Text>
             </View>
 
             {/* Emergency */}
             <View style={[styles.section, { borderBottomWidth: 0, marginBottom: Spacing.xl }]}>
-              <Text style={styles.sectionTitle}>📞 Emergency Contact</Text>
-              <Text style={styles.emergencyText}>Poison Control: {chemicalData.emergency_contact}</Text>
+              <Text style={styles.sectionTitle}>📞 {t('emergency_contact_title')}</Text>
+              <Text style={styles.emergencyText}>
+                {t('poison_control')} {chemicalData.emergency_contact}
+              </Text>
             </View>
           </ScrollView>
 
           {/* Footer CTA */}
           <View style={styles.footer}>
             <TouchableOpacity style={styles.confirmBtn} onPress={onConfirm} activeOpacity={0.8}>
-              <Text style={styles.confirmBtnText}>I Understand the Risks</Text>
+              <Text style={styles.confirmBtnText}>{t('i_understand')}</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>

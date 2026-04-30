@@ -13,6 +13,8 @@ import AnalyzeScreen from "./screens/AnalyzeScreen";
 import ResultScreen from "./screens/ResultScreen";
 import HistoryScreen from "./screens/HistoryScreen";
 import TreatmentScreen from "./screens/TreatmentScreen";
+import LanguageScreen from "./app/(tabs)/LanguageScreen.jsx";
+import { LanguageProvider } from "./context/LanguageContext";
 import { Colors, Typography, Spacing, Shadow } from "./constants/theme";
 
 const Stack = createStackNavigator();
@@ -67,6 +69,7 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
+        <LanguageProvider>
         <StatusBar style="light" />
         <NavigationContainer>
           <Stack.Navigator
@@ -126,24 +129,17 @@ export default function App() {
               })}
             />
 
-            {/* Treatment Screen */}
+            {/* Treatment: title + back use t() via screen useLayoutEffect */}
+            <Stack.Screen name="Treatment" component={TreatmentScreen} />
+
             <Stack.Screen
-              name="Treatment"
-              component={TreatmentScreen}
-              options={({ navigation }) => ({
-                title: "Treatment Plan",
-                headerLeft: () => (
-                  <TouchableOpacity
-                    onPress={() => navigation.goBack()}
-                    style={styles.backBtn}
-                  >
-                    <Text style={styles.backBtnText}>‹ Back</Text>
-                  </TouchableOpacity>
-                ),
-              })}
+              name="Language"
+              component={LanguageScreen}
+              options={{ headerShown: false }}
             />
           </Stack.Navigator>
         </NavigationContainer>
+        </LanguageProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
