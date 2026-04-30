@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Colors, Typography, Spacing, Radius, Shadow } from '../constants/theme';
 import { useLanguage } from '../context/LanguageContext';
+import { useThemeMode } from '../context/ThemeModeContext';
 
 export default function ToxicityWarningModal({
   visible,
@@ -18,6 +19,7 @@ export default function ToxicityWarningModal({
   chemicalData,
 }) {
   const { t } = useLanguage();
+  const { COLORS } = useThemeMode();
   const [pulseAnim] = useState(new Animated.Value(0));
 
   // Gear checklist states
@@ -46,12 +48,12 @@ export default function ToxicityWarningModal({
           Animated.timing(pulseAnim, {
             toValue: 1,
             duration: 800,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(pulseAnim, {
             toValue: 0,
             duration: 800,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ])
       );
@@ -76,15 +78,15 @@ export default function ToxicityWarningModal({
   const getToxicityColor = (level) => {
     switch (level) {
       case 'LOW':
-        return Colors.severityLow;
+        return COLORS.success;
       case 'MEDIUM':
-        return Colors.severityModerate;
+        return COLORS.warning;
       case 'HIGH':
-        return Colors.severityHigh;
+        return COLORS.danger;
       case 'EXTREMELY HIGH':
         return '#8B0000'; // Dark Red
       default:
-        return Colors.textMuted;
+        return COLORS.subtext;
     }
   };
 
@@ -240,7 +242,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: Colors.white,
+    backgroundColor: COLORS.card,
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,
     height: '85%',
@@ -372,7 +374,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderTopWidth: 1,
     borderTopColor: Colors.borderLight,
-    backgroundColor: Colors.white,
+    backgroundColor: COLORS.card,
   },
   confirmBtn: {
     backgroundColor: Colors.severityHigh,

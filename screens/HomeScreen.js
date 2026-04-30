@@ -17,12 +17,25 @@ import { getScanHistory, formatTimestamp } from "../services/historyStorage";
 import { Colors, Typography, Spacing, Radius, Shadow } from "../constants/theme";
 import LanguageSelector from "../components/LanguageSelector";
 import { useLanguage } from "../context/LanguageContext";
+import { useTheme } from "../context/ThemeContext";
+import { useThemeMode } from "../context/ThemeModeContext";
 
 export default function HomeScreen({ navigation }) {
   const { t } = useLanguage();
+  const { COLORS, toggleTheme, isDarkMode } = useTheme();
+  const { COLORS: modeColors } = useThemeMode();
   const [recentScans, setRecentScans] = useState([]);
   const [tipIndex, setTipIndex] = useState(0);
   const [langOpen, setLangOpen] = useState(false);
+  const hour = new Date().getHours();
+  const greeting =
+    hour >= 5 && hour < 12
+      ? "Good Morning 🌅"
+      : hour >= 12 && hour < 17
+        ? "Good Afternoon ☀️"
+        : hour >= 17 && hour < 21
+          ? "Good Evening 🌆"
+          : "Good Night 🌙";
 
   const tips = useMemo(
     () => [t("tip_0"), t("tip_1"), t("tip_2"), t("tip_3"), t("tip_4")],
@@ -53,14 +66,18 @@ export default function HomeScreen({ navigation }) {
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.primaryDark} />
+    <View style={[styles.container, { backgroundColor: modeColors.background }]}>
+      <StatusBar
+        barStyle={isDarkMode ? "light-content" : "dark-content"}
+        backgroundColor={isDarkMode ? COLORS.header : Colors.primaryDark}
+      />
 
       {/* Header */}
       <LinearGradient
-        colors={[Colors.primaryDark, Colors.primary]}
+        colors={isDarkMode ? ["#121212", "#1E1E1E"] : [Colors.primaryDark, Colors.primary]}
         style={styles.header}
       >
+        <Text style={styles.greetingText}>{greeting}</Text>
         <View style={styles.headerContent}>
           <View style={styles.headerTitleBlock}>
             <Text style={styles.appName}>{t("app_name")}</Text>
@@ -73,6 +90,14 @@ export default function HomeScreen({ navigation }) {
             accessibilityLabel="Language"
           >
             <Text style={styles.langBtnText}>🌐</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.langBtn}
+            onPress={toggleTheme}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityLabel="Toggle theme"
+          >
+            <Text style={styles.langBtnText}>{isDarkMode ? "☀️" : "🌙"}</Text>
           </TouchableOpacity>
           <View style={styles.leafBadge}>
             <Text style={styles.leafEmoji}>🌿</Text>
@@ -93,10 +118,10 @@ export default function HomeScreen({ navigation }) {
       >
         {/* Section 1: AI Features */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>AI Features</Text>
+          <Text style={[styles.sectionLabel, { color: modeColors.subtext }]}>AI Features</Text>
 
           <TouchableOpacity
-            style={styles.treatmentBtn}
+            style={[styles.treatmentBtn, { backgroundColor: modeColors.card, borderColor: modeColors.border }]}
             onPress={() => navigation.navigate("PestIdentification")}
             activeOpacity={0.8}
           >
@@ -104,14 +129,14 @@ export default function HomeScreen({ navigation }) {
               <Text style={{ fontSize: 24 }}>📷</Text>
             </View>
             <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>📷 Pest Identification</Text>
-              <Text style={styles.treatmentBtnSub}>Take photo or upload to identify pests</Text>
+              <Text style={[styles.treatmentBtnTitle, { color: modeColors.text }]}>📷 Pest Identification</Text>
+              <Text style={[styles.treatmentBtnSub, { color: modeColors.subtext }]}>Take photo or upload to identify pests</Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.treatmentBtn, { marginTop: Spacing.md }]}
+            style={[styles.treatmentBtn, { marginTop: Spacing.md, backgroundColor: modeColors.card, borderColor: modeColors.border }]}
             onPress={() => navigation.navigate("SoilAnalysis")}
             activeOpacity={0.8}
           >
@@ -119,8 +144,8 @@ export default function HomeScreen({ navigation }) {
               <Text style={{ fontSize: 24 }}>🪱</Text>
             </View>
             <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>🪱 Soil Analysis</Text>
-              <Text style={styles.treatmentBtnSub}>Manual entry or IoT sensor readings</Text>
+              <Text style={[styles.treatmentBtnTitle, { color: modeColors.text }]}>🪱 Soil Analysis</Text>
+              <Text style={[styles.treatmentBtnSub, { color: modeColors.subtext }]}>Manual entry or IoT sensor readings</Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
@@ -132,17 +157,18 @@ export default function HomeScreen({ navigation }) {
             icon="🔍"
             label={t("total_scans")}
             value={recentScans.length > 0 ? t("active") : "0"}
+            themeColors={modeColors}
           />
-          <StatCard icon="🌾" label={t("crops_protected")} value="∞" />
-          <StatCard icon="⚡" label={t("ai_speed")} value="~5s" />
+          <StatCard icon="🌾" label={t("crops_protected")} value="∞" themeColors={modeColors} />
+          <StatCard icon="⚡" label={t("ai_speed")} value="~5s" themeColors={modeColors} />
         </View>
 
         {/* Section 2: Treatment & Protocol */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Treatment & Protocol</Text>
+          <Text style={[styles.sectionLabel, { color: modeColors.subtext }]}>Treatment & Protocol</Text>
 
           <TouchableOpacity
-            style={styles.treatmentBtn}
+            style={[styles.treatmentBtn, { backgroundColor: modeColors.card, borderColor: modeColors.border }]}
             onPress={() => navigation.navigate("Treatment")}
             activeOpacity={0.8}
           >
@@ -150,14 +176,14 @@ export default function HomeScreen({ navigation }) {
               <Text style={{ fontSize: 24 }}>💊</Text>
             </View>
             <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>💊 Treatment Plan</Text>
-              <Text style={styles.treatmentBtnSub}>{t("treatment_sub")}</Text>
+              <Text style={[styles.treatmentBtnTitle, { color: modeColors.text }]}>💊 Treatment Plan</Text>
+              <Text style={[styles.treatmentBtnSub, { color: modeColors.subtext }]}>{t("treatment_sub")}</Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.treatmentBtn, { marginTop: Spacing.md }]}
+            style={[styles.treatmentBtn, { marginTop: Spacing.md, backgroundColor: modeColors.card, borderColor: modeColors.border }]}
             onPress={() => navigation.navigate("CropProtocol")}
             activeOpacity={0.8}
           >
@@ -165,8 +191,8 @@ export default function HomeScreen({ navigation }) {
               <Text style={{ fontSize: 24 }}>🌾</Text>
             </View>
             <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>🌾 Crop Protocol</Text>
-              <Text style={styles.treatmentBtnSub}>Stages, risks, and prevention schedule</Text>
+              <Text style={[styles.treatmentBtnTitle, { color: modeColors.text }]}>🌾 Crop Protocol</Text>
+              <Text style={[styles.treatmentBtnSub, { color: modeColors.subtext }]}>Stages, risks, and prevention schedule</Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
@@ -174,10 +200,10 @@ export default function HomeScreen({ navigation }) {
 
         {/* Section 3: Monitoring */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Monitoring</Text>
+          <Text style={[styles.sectionLabel, { color: modeColors.subtext }]}>Monitoring</Text>
 
           <TouchableOpacity
-            style={styles.treatmentBtn}
+            style={[styles.treatmentBtn, { backgroundColor: modeColors.card, borderColor: modeColors.border }]}
             onPress={() => navigation.navigate("PestTimeline")}
             activeOpacity={0.8}
           >
@@ -185,14 +211,14 @@ export default function HomeScreen({ navigation }) {
               <Text style={{ fontSize: 24 }}>📅</Text>
             </View>
             <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>📅 Pest Timeline</Text>
-              <Text style={styles.treatmentBtnSub}>Track pest activity on your farm over time</Text>
+              <Text style={[styles.treatmentBtnTitle, { color: modeColors.text }]}>📅 Pest Timeline</Text>
+              <Text style={[styles.treatmentBtnSub, { color: modeColors.subtext }]}>Track pest activity on your farm over time</Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.treatmentBtn, { marginTop: Spacing.md }]}
+            style={[styles.treatmentBtn, { marginTop: Spacing.md, backgroundColor: modeColors.card, borderColor: modeColors.border }]}
             onPress={() => navigation.navigate("WeatherAdvisory")}
             activeOpacity={0.8}
           >
@@ -200,8 +226,8 @@ export default function HomeScreen({ navigation }) {
               <Text style={{ fontSize: 24 }}>🌦️</Text>
             </View>
             <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>🌦️ Weather Advisory</Text>
-              <Text style={styles.treatmentBtnSub}>Pest risk forecast and spraying guidance</Text>
+              <Text style={[styles.treatmentBtnTitle, { color: modeColors.text }]}>🌦️ Weather Advisory</Text>
+              <Text style={[styles.treatmentBtnSub, { color: modeColors.subtext }]}>Pest risk forecast and spraying guidance</Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
@@ -209,10 +235,10 @@ export default function HomeScreen({ navigation }) {
 
         {/* Section 4: Reports & Tools */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Reports & Tools</Text>
+          <Text style={[styles.sectionLabel, { color: modeColors.subtext }]}>Reports & Tools</Text>
 
           <TouchableOpacity
-            style={styles.treatmentBtn}
+            style={[styles.treatmentBtn, { backgroundColor: modeColors.card, borderColor: modeColors.border }]}
             onPress={() => navigation.navigate("PDFReport")}
             activeOpacity={0.8}
           >
@@ -220,14 +246,14 @@ export default function HomeScreen({ navigation }) {
               <Text style={{ fontSize: 24 }}>📄</Text>
             </View>
             <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>📄 PDF Reports</Text>
-              <Text style={styles.treatmentBtnSub}>Auto-generate pest analysis PDF report</Text>
+              <Text style={[styles.treatmentBtnTitle, { color: modeColors.text }]}>📄 PDF Reports</Text>
+              <Text style={[styles.treatmentBtnSub, { color: modeColors.subtext }]}>Auto-generate pest analysis PDF report</Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.treatmentBtn, { marginTop: Spacing.md }]}
+            style={[styles.treatmentBtn, { marginTop: Spacing.md, backgroundColor: modeColors.card, borderColor: modeColors.border }]}
             onPress={() => navigation.navigate("Language")}
             activeOpacity={0.8}
           >
@@ -235,14 +261,14 @@ export default function HomeScreen({ navigation }) {
               <Text style={{ fontSize: 24 }}>🌐</Text>
             </View>
             <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>🌐 Language Support</Text>
-              <Text style={styles.treatmentBtnSub}>Switch app language</Text>
+              <Text style={[styles.treatmentBtnTitle, { color: modeColors.text }]}>🌐 Language Support</Text>
+              <Text style={[styles.treatmentBtnSub, { color: modeColors.subtext }]}>Switch app language</Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.treatmentBtn, { marginTop: Spacing.md }]}
+            style={[styles.treatmentBtn, { marginTop: Spacing.md, backgroundColor: modeColors.card, borderColor: modeColors.border }]}
             onPress={() => navigation.navigate("VoiceAssistant")}
             activeOpacity={0.8}
           >
@@ -250,13 +276,13 @@ export default function HomeScreen({ navigation }) {
               <Text style={{ fontSize: 24 }}>🎤</Text>
             </View>
             <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>🎤 Voice Assistant</Text>
-              <Text style={styles.treatmentBtnSub}>{t("voice_assistant_sub")}</Text>
+              <Text style={[styles.treatmentBtnTitle, { color: modeColors.text }]}>🎤 Voice Assistant</Text>
+              <Text style={[styles.treatmentBtnSub, { color: modeColors.subtext }]}>{t("voice_assistant_sub")}</Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.treatmentBtn, { marginTop: Spacing.md }]}
+            style={[styles.treatmentBtn, { marginTop: Spacing.md, backgroundColor: modeColors.card, borderColor: modeColors.border }]}
             onPress={() => navigation.navigate("LowBandwidth")}
             activeOpacity={0.8}
           >
@@ -264,8 +290,8 @@ export default function HomeScreen({ navigation }) {
               <Text style={{ fontSize: 24 }}>{"\uD83D\uDCF6"}</Text>
             </View>
             <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>{"\uD83D\uDCF6"} Low Bandwidth Mode</Text>
-              <Text style={styles.treatmentBtnSub}>Optimize app usage for 2G and slow networks</Text>
+              <Text style={[styles.treatmentBtnTitle, { color: modeColors.text }]}>{"\uD83D\uDCF6"} Low Bandwidth Mode</Text>
+              <Text style={[styles.treatmentBtnSub, { color: modeColors.subtext }]}>Optimize app usage for 2G and slow networks</Text>
             </View>
             <Text style={styles.chevron}>{">"}</Text>
           </TouchableOpacity>
@@ -275,7 +301,7 @@ export default function HomeScreen({ navigation }) {
         {recentScans.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionLabel}>{t("recent_scans")}</Text>
+              <Text style={[styles.sectionLabel, { color: modeColors.subtext }]}>{t("recent_scans")}</Text>
               <TouchableOpacity onPress={() => navigation.navigate("History")}>
                 <Text style={styles.seeAll}>{t("see_all")}</Text>
               </TouchableOpacity>
@@ -323,12 +349,12 @@ function severityLabel(sev, t) {
   return key ? t(key) : sev;
 }
 
-function StatCard({ icon, label, value }) {
+function StatCard({ icon, label, value, themeColors }) {
   return (
-    <View style={styles.statCard}>
+    <View style={[styles.statCard, { backgroundColor: themeColors.card, borderColor: themeColors.border }]}>
       <Text style={styles.statIcon}>{icon}</Text>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={[styles.statValue, { color: themeColors.text }]}>{value}</Text>
+      <Text style={[styles.statLabel, { color: themeColors.subtext }]}>{label}</Text>
     </View>
   );
 }
@@ -415,7 +441,12 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     paddingHorizontal: Spacing.xl,
   },
-  headerContent: {
+  greetingText: {
+    fontSize: Typography.sizes.md,
+    fontWeight: Typography.weights.semibold,
+    color: "rgba(255,255,255,0.95)",
+    marginBottom: Spacing.sm,
+  },  headerContent: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -476,7 +507,64 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 
-  scrollView: { flex: 1 },
+  heroCard: {
+    marginTop: Spacing.md,
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  heroLeft: {
+    flex: 1,
+    paddingRight: Spacing.sm,
+  },
+  heroTitle: {
+    color: Colors.white,
+    fontSize: Typography.sizes.xl,
+    fontWeight: Typography.weights.bold,
+  },
+  heroSubtitle: {
+    color: "rgba(255,255,255,0.9)",
+    fontSize: Typography.sizes.xs,
+    marginTop: 6,
+    lineHeight: 18,
+  },
+  heroScanButton: {
+    marginTop: Spacing.sm,
+    alignSelf: "flex-start",
+    backgroundColor: Colors.white,
+    borderRadius: Radius.round,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 7,
+  },
+  heroScanButtonText: {
+    color: Colors.primaryDark,
+    fontSize: Typography.sizes.xs,
+    fontWeight: Typography.weights.bold,
+  },
+  heroEmoji: {
+    fontSize: 34,
+  },
+  heroStatsRow: {
+    marginTop: Spacing.sm,
+    flexDirection: "row",
+    gap: Spacing.sm,
+  },
+  heroMiniCard: {
+    flex: 1,
+    borderRadius: Radius.md,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  heroMiniIcon: {
+    fontSize: 15,
+    marginBottom: 3,
+  },
+  heroMiniText: {
+    color: Colors.textPrimary,
+    fontSize: Typography.sizes.xs,
+    fontWeight: Typography.weights.bold,
+  },  scrollView: { flex: 1 },
   scrollContent: { paddingHorizontal: Spacing.xl, paddingTop: Spacing.xl },
 
   section: { marginBottom: Spacing.xxl },
@@ -486,7 +574,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: Spacing.md,
   },
-  sectionLabel: {
+  greetingText: {
+    fontSize: Typography.sizes.md,
+    fontWeight: Typography.weights.semibold,
+    color: "rgba(255,255,255,0.95)",
+    marginBottom: Spacing.sm,
+  },  sectionLabel: {
     fontSize: Typography.sizes.xs,
     fontWeight: Typography.weights.bold,
     color: Colors.textMuted,
@@ -695,6 +788,10 @@ const styles = StyleSheet.create({
     fontSize: 28,
   },
 });
+
+
+
+
 
 
 

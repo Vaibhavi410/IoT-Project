@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import StageCard from '../../components/StageCard';
-import { COLORS } from '../../constants/colors';
+import { useThemeMode } from '../../context/ThemeModeContext';
 
 const CROPS = ['Wheat', 'Rice', 'Tomato', 'Cotton', 'Corn', 'Potato'];
 

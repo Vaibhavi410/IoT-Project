@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
-import { COLORS } from '../constants/colors';
+import { useThemeMode } from '../context/ThemeModeContext';
+import { useThemeMode } from '../context/ThemeModeContext';
 
 const RISK_COLORS = {
   green: COLORS.primary,
@@ -9,6 +10,7 @@ const RISK_COLORS = {
 };
 
 export default function StageCard({ stage, isExpanded, onPress }) {
+  const { COLORS: themeColors } = useThemeMode();
   const [animatedHeight] = useState(new Animated.Value(isExpanded ? 1 : 0));
   const [contentHeight, setContentHeight] = useState(0);
 
@@ -36,11 +38,11 @@ export default function StageCard({ stage, isExpanded, onPress }) {
   };
 
   return (
-    <View style={styles.card}>
-      <Pressable onPress={onPress} style={styles.header} android_ripple={{ color: '#E8F5E9' }}>
+    <View style={[styles.card, { backgroundColor: themeColors.card, borderColor: themeColors.border }]}>
+      <Pressable onPress={onPress} style={styles.header} android_ripple={{ color: themeColors.background }}>
         <View style={styles.titleWrap}>
-          <Text style={styles.stageName}>{stage.name}</Text>
-          <Text style={styles.dayRange}>{stage.days}</Text>
+          <Text style={[styles.stageName, { color: themeColors.text }]}>{stage.name}</Text>
+          <Text style={[styles.dayRange, { color: themeColors.subtext }]}>{stage.days}</Text>
         </View>
         <View style={[styles.riskBadge, { backgroundColor: riskColor }]}>
           <Text style={styles.riskText}>{stage.risk.toUpperCase()} RISK</Text>
@@ -52,14 +54,14 @@ export default function StageCard({ stage, isExpanded, onPress }) {
           style={styles.expandContent}
           onLayout={(event) => setContentHeight(event.nativeEvent.layout.height)}
         >
-          <Text style={styles.sectionLabel}>Common Pests</Text>
+          <Text style={[styles.sectionLabel, { color: themeColors.primary }]}>Common Pests</Text>
           {stage.pests.map((pest) => (
-            <Text key={pest} style={styles.pestItem}>
+            <Text key={pest} style={[styles.pestItem, { color: themeColors.text }]}>
               {'\u2022'} {pest}
             </Text>
           ))}
-          <Text style={styles.sectionLabel}>Recommended Action</Text>
-          <Text style={styles.actionText}>{stage.action}</Text>
+          <Text style={[styles.sectionLabel, { color: themeColors.primary }]}>Recommended Action</Text>
+          <Text style={[styles.actionText, { color: themeColors.text }]}>{stage.action}</Text>
         </View>
       </Animated.View>
     </View>

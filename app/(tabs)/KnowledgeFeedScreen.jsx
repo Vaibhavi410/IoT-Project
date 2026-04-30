@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Animated,
@@ -13,23 +13,23 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { COLORS } from '../../constants/colors';
+import { useThemeMode } from '../../context/ThemeModeContext';
 
 const CATEGORY_FILTERS = ['All', 'Pest Alert', 'Tip', 'Weather', 'Success Story', 'Market'];
 
 const CATEGORY_META = {
-  'Pest Alert': { color: COLORS.danger, bg: '#FFEBEE', emoji: '🔴' },
-  Tip: { color: COLORS.primary, bg: '#E8F5E9', emoji: '🟢' },
-  Weather: { color: '#1976D2', bg: '#E3F2FD', emoji: '🔵' },
-  'Success Story': { color: '#F9A825', bg: '#FFFDE7', emoji: '⭐' },
-  Market: { color: COLORS.warning, bg: '#FFF8E1', emoji: '🟡' },
+  'Pest Alert': { color: COLORS.danger, bg: '#FFEBEE', emoji: '??' },
+  Tip: { color: COLORS.primary, bg: '#E8F5E9', emoji: '??' },
+  Weather: { color: '#1976D2', bg: '#E3F2FD', emoji: '??' },
+  'Success Story': { color: '#F9A825', bg: '#FFFDE7', emoji: '?' },
+  Market: { color: COLORS.warning, bg: '#FFF8E1', emoji: '??' },
 };
 
 const INITIAL_POSTS = [
   {
     id: '1',
     farmer: 'Ramesh Patil',
-    avatar: '👨‍🌾',
+    avatar: '?????',
     location: 'Nashik',
     category: 'Pest Alert',
     time: '2 hours ago',
@@ -43,13 +43,13 @@ const INITIAL_POSTS = [
   {
     id: '2',
     farmer: 'Sunita Deshmukh',
-    avatar: '👩‍🌾',
+    avatar: '?????',
     location: 'Pune',
     category: 'Tip',
     time: '5 hours ago',
     title: 'Best time to spray pesticide for maximum effect',
     body:
-      'Always spray early morning before 8am or after 6pm. Avoid midday spraying — UV rays reduce effectiveness by 40%.',
+      'Always spray early morning before 8am or after 6pm. Avoid midday spraying � UV rays reduce effectiveness by 40%.',
     likes: 89,
     comments: 28,
     hasImage: false,
@@ -57,13 +57,13 @@ const INITIAL_POSTS = [
   {
     id: '3',
     farmer: 'Vijay More',
-    avatar: '👨‍🌾',
+    avatar: '?????',
     location: 'Aurangabad',
     category: 'Success Story',
     time: '1 day ago',
     title: 'Saved 80% of cotton crop using Pestify recommendations',
     body:
-      'Used the tiered treatment plan from Pestify. Started with neem oil, moved to bio spray. Saved ₹45,000 worth of cotton this season!',
+      'Used the tiered treatment plan from Pestify. Started with neem oil, moved to bio spray. Saved ?45,000 worth of cotton this season!',
     likes: 156,
     comments: 45,
     hasImage: true,
@@ -71,11 +71,11 @@ const INITIAL_POSTS = [
   {
     id: '4',
     farmer: 'Anita Kulkarni',
-    avatar: '👩‍🌾',
+    avatar: '?????',
     location: 'Solapur',
     category: 'Weather',
     time: '3 hours ago',
-    title: 'Rain expected next week — protect your crops now',
+    title: 'Rain expected next week � protect your crops now',
     body:
       'IMD forecast shows heavy rain in Solapur next week. Apply fungicide now before rainfall to prevent fungal outbreak.',
     likes: 67,
@@ -85,13 +85,13 @@ const INITIAL_POSTS = [
   {
     id: '5',
     farmer: 'Manoj Shinde',
-    avatar: '👨‍🌾',
+    avatar: '?????',
     location: 'Kolhapur',
     category: 'Market',
     time: '2 days ago',
-    title: 'Onion prices rising — good time to harvest',
+    title: 'Onion prices rising � good time to harvest',
     body:
-      'Onion prices at ₹2,800/quintal in Kolhapur APMC today. Expected to rise further. Plan your harvest accordingly.',
+      'Onion prices at ?2,800/quintal in Kolhapur APMC today. Expected to rise further. Plan your harvest accordingly.',
     likes: 203,
     comments: 67,
     hasImage: false,
@@ -99,7 +99,7 @@ const INITIAL_POSTS = [
   {
     id: '6',
     farmer: 'Priya Jadhav',
-    avatar: '👩‍🌾',
+    avatar: '?????',
     location: 'Nagpur',
     category: 'Tip',
     time: '6 hours ago',
@@ -184,7 +184,7 @@ export default function KnowledgeFeedScreen() {
           <Text style={styles.title}>Farmer Knowledge Feed</Text>
           <Text style={styles.subtitle}>Stay updated with latest farming tips</Text>
           <View style={styles.searchBar}>
-            <Text style={styles.searchIcon}>🔎</Text>
+            <Text style={styles.searchIcon}>??</Text>
             <TextInput
               style={styles.searchInput}
               placeholder="Search tips, pests, crops..."
@@ -234,7 +234,7 @@ export default function KnowledgeFeedScreen() {
         onPress={() => setWriteModalVisible(true)}
         activeOpacity={0.85}
       >
-        <Text style={styles.fabText}>✏️</Text>
+        <Text style={styles.fabText}>??</Text>
       </TouchableOpacity>
 
       <InfoModal modal={infoModal} onClose={() => setInfoModal({ ...infoModal, visible: false })} />
@@ -300,7 +300,7 @@ function PostCard({ post, likeScale, onLike, onComment, onShare }) {
         </View>
         <View style={styles.farmerInfo}>
           <Text style={styles.farmerName}>{post.farmer}</Text>
-          <Text style={styles.postMeta}>{post.location} • {post.time}</Text>
+          <Text style={styles.postMeta}>{post.location} � {post.time}</Text>
         </View>
         <View style={[styles.categoryBadge, { backgroundColor: category.bg }]}>
           <Text style={[styles.categoryBadgeText, { color: category.color }]}>
@@ -314,20 +314,20 @@ function PostCard({ post, likeScale, onLike, onComment, onShare }) {
 
       {post.hasImage && (
         <View style={styles.imagePlaceholder}>
-          <Text style={styles.imageEmoji}>🌾</Text>
+          <Text style={styles.imageEmoji}>??</Text>
           <Text style={styles.imageText}>Crop image preview</Text>
         </View>
       )}
 
       <View style={styles.actionRow}>
         <TouchableOpacity style={styles.actionButton} onPress={onLike} activeOpacity={0.75}>
-          <Animated.Text style={[styles.actionText, { transform: [{ scale: likeScale }] }]}>👍 {post.likes}</Animated.Text>
+          <Animated.Text style={[styles.actionText, { transform: [{ scale: likeScale }] }]}>?? {post.likes}</Animated.Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={onComment} activeOpacity={0.75}>
-          <Text style={styles.actionText}>💬 {post.comments}</Text>
+          <Text style={styles.actionText}>?? {post.comments}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.shareButton} onPress={onShare} activeOpacity={0.75}>
-          <Text style={styles.shareText}>🔗 Share</Text>
+          <Text style={styles.shareText}>?? Share</Text>
         </TouchableOpacity>
       </View>
     </View>

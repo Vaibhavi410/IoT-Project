@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS } from '../../constants/colors';
+import { useThemeMode } from '../../context/ThemeModeContext';
 
 const REPORT_TYPES = [
   {

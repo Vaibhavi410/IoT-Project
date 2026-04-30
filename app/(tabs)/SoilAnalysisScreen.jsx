@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { COLORS } from '../../constants/colors';
+import { useThemeMode } from '../../context/ThemeModeContext';
 
 const SOIL_TYPES = ['Clay', 'Sandy', 'Loamy', 'Black', 'Red'];
 

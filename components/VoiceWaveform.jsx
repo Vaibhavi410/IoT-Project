@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
-import { COLORS } from '../constants/colors';
+import { useThemeMode } from '../context/ThemeModeContext';
 
 const BAR_COUNT = 5;
 const MIN_H = 6;

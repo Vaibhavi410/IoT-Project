@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import TreatmentCard from '../../components/TreatmentCard';
 import { useLanguage } from '../../context/LanguageContext';
 
-import { COLORS } from '../../constants/colors';
+import { useThemeMode } from '../../context/ThemeModeContext';
 
 // Dummy data for testing
 const pestData = {

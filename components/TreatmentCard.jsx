@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { COLORS } from '../constants/colors';
+import { useThemeMode } from '../context/ThemeModeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useThemeMode } from '../context/ThemeModeContext';
 
 function typeToTKey(type) {
   const m = { Organic: 'organic', Biological: 'biological', Chemical: 'chemical' };
@@ -10,6 +11,7 @@ function typeToTKey(type) {
 
 export default function TreatmentCard({ treatment, isExpanded, onToggle, onApply, isApplied }) {
   const { t } = useLanguage();
+  const { COLORS: themeColors } = useThemeMode();
   const typeKey = typeToTKey(treatment.type);
   const typeLabel = typeKey ? t(typeKey) : treatment.type;
 
@@ -35,7 +37,7 @@ export default function TreatmentCard({ treatment, isExpanded, onToggle, onApply
   }, [t, treatment.cost]);
 
   return (
-    <View style={[styles.cardContainer, { borderColor: cardColor }]}>
+    <View style={[styles.cardContainer, { borderColor: cardColor, backgroundColor: themeColors.card }]}>
       {/* Header (always visible) */}
       <TouchableOpacity 
         style={[styles.header, { backgroundColor: cardBg }]} 
@@ -46,7 +48,7 @@ export default function TreatmentCard({ treatment, isExpanded, onToggle, onApply
           <Text style={[styles.tierText, { color: cardColor }]}>
             {t('tier_prefix')} {treatment.tier}: {typeLabel}
           </Text>
-          <Text style={styles.nameText}>{treatment.name}</Text>
+          <Text style={[styles.nameText, { color: themeColors.text }]}>{treatment.name}</Text>
         </View>
         <Text style={{ fontSize: 20, color: cardColor }}>{isExpanded ? '▲' : '▼'}</Text>
       </TouchableOpacity>
@@ -54,7 +56,7 @@ export default function TreatmentCard({ treatment, isExpanded, onToggle, onApply
       {/* Expanded Content */}
       {isExpanded && (
         <View style={styles.content}>
-          <View style={styles.badgeContainer}>
+          <View style={[styles.badgeContainer, { backgroundColor: themeColors.background }]}>
             <Text style={[styles.badgeText, { color: cardColor }]}>{badgeText}</Text>
             {treatment.type === 'Chemical' && (
               <Text style={[styles.warningBadge, { color: COLORS.danger }]}>
@@ -64,25 +66,25 @@ export default function TreatmentCard({ treatment, isExpanded, onToggle, onApply
           </View>
 
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>{t('dosage')}:</Text>
-            <Text style={styles.detailValue}>{treatment.dosage}</Text>
+            <Text style={[styles.detailLabel, { color: themeColors.subtext }]}>{t('dosage')}:</Text>
+            <Text style={[styles.detailValue, { color: themeColors.text }]}>{treatment.dosage}</Text>
           </View>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>{t('dilution_ratio')}:</Text>
-            <Text style={styles.detailValue}>{treatment.dilution_ratio}</Text>
+            <Text style={[styles.detailLabel, { color: themeColors.subtext }]}>{t('dilution_ratio')}:</Text>
+            <Text style={[styles.detailValue, { color: themeColors.text }]}>{treatment.dilution_ratio}</Text>
           </View>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>{t('spray_schedule')}:</Text>
-            <Text style={styles.detailValue}>{treatment.spray_schedule}</Text>
+            <Text style={[styles.detailLabel, { color: themeColors.subtext }]}>{t('spray_schedule')}:</Text>
+            <Text style={[styles.detailValue, { color: themeColors.text }]}>{treatment.spray_schedule}</Text>
           </View>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>{t('reentry_interval')}:</Text>
-            <Text style={styles.detailValue}>{treatment.reentry_interval}</Text>
+            <Text style={[styles.detailLabel, { color: themeColors.subtext }]}>{t('reentry_interval')}:</Text>
+            <Text style={[styles.detailValue, { color: themeColors.text }]}>{treatment.reentry_interval}</Text>
           </View>
 
           {/* Effectiveness Bar */}
           <View style={styles.effectivenessContainer}>
-            <Text style={styles.detailLabel}>
+            <Text style={[styles.detailLabel, { color: themeColors.subtext }]}>
               {t('effectiveness')} ({treatment.effectiveness}%)
             </Text>
             <View style={styles.progressBarBg}>
@@ -91,8 +93,8 @@ export default function TreatmentCard({ treatment, isExpanded, onToggle, onApply
           </View>
 
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>{t('cost')}:</Text>
-            <Text style={styles.detailValue}>{costLabel}</Text>
+            <Text style={[styles.detailLabel, { color: themeColors.subtext }]}>{t('cost')}:</Text>
+            <Text style={[styles.detailValue, { color: themeColors.text }]}>{costLabel}</Text>
           </View>
 
           {/* Mark as Applied Button */}
