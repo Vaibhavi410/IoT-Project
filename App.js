@@ -21,6 +21,7 @@ import PestTimelineScreen from "./app/(tabs)/PestTimelineScreen.jsx";
 import PDFReportScreen from "./app/(tabs)/PDFReportScreen.jsx";
 import PestIdentificationScreen from "./app/(tabs)/PestIdentificationScreen.jsx";
 import SoilAnalysisScreen from "./app/(tabs)/SoilAnalysisScreen.jsx";
+import KnowledgeFeedScreen from "./app/(tabs)/KnowledgeFeedScreen.jsx";
 import { LanguageProvider } from "./context/LanguageContext";
 import { Colors, Typography, Spacing, Shadow } from "./constants/theme";
 
@@ -45,6 +46,16 @@ function MainTabs() {
           tabBarLabel: "Scan",
           tabBarIcon: ({ focused }) => (
             <TabIcon emoji="🔬" focused={focused} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Feed"
+        component={KnowledgeFeedScreen}
+        options={{
+          tabBarLabel: "Feed",
+          tabBarIcon: ({ focused }) => (
+            <TabIcon emoji={"\uD83D\uDCF0"} focused={focused} />
           ),
         }}
       />
@@ -179,6 +190,12 @@ export default function App() {
               <Stack.Screen
                 name="WeatherAdvisory"
                 component={WeatherAdvisoryScreen}
+                options={{ headerShown: false }}
+              />
+
+              <Stack.Screen
+                name="KnowledgeFeed"
+                component={KnowledgeFeedScreen}
                 options={{ headerShown: false }}
               />
             </Stack.Navigator>
