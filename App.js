@@ -22,6 +22,7 @@ import PDFReportScreen from "./app/(tabs)/PDFReportScreen.jsx";
 import PestIdentificationScreen from "./app/(tabs)/PestIdentificationScreen.jsx";
 import SoilAnalysisScreen from "./app/(tabs)/SoilAnalysisScreen.jsx";
 import KnowledgeFeedScreen from "./app/(tabs)/KnowledgeFeedScreen.jsx";
+import LowBandwidthScreen from "./app/(tabs)/LowBandwidthScreen.jsx";
 import { LanguageProvider } from "./context/LanguageContext";
 import { Colors, Typography, Spacing, Shadow } from "./constants/theme";
 
@@ -196,6 +197,12 @@ export default function App() {
               <Stack.Screen
                 name="KnowledgeFeed"
                 component={KnowledgeFeedScreen}
+                options={{ headerShown: false }}
+              />
+
+              <Stack.Screen
+                name="LowBandwidth"
+                component={LowBandwidthScreen}
                 options={{ headerShown: false }}
               />
             </Stack.Navigator>

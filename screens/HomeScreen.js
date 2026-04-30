@@ -255,6 +255,20 @@ export default function HomeScreen({ navigation }) {
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.treatmentBtn, { marginTop: Spacing.md }]}
+            onPress={() => navigation.navigate("LowBandwidth")}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.treatmentIconBox, { backgroundColor: Colors.primaryMuted }]}>
+              <Text style={{ fontSize: 24 }}>{"\uD83D\uDCF6"}</Text>
+            </View>
+            <View style={styles.treatmentBtnInfo}>
+              <Text style={styles.treatmentBtnTitle}>{"\uD83D\uDCF6"} Low Bandwidth Mode</Text>
+              <Text style={styles.treatmentBtnSub}>Optimize app usage for 2G and slow networks</Text>
+            </View>
+            <Text style={styles.chevron}>{">"}</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Recent Scans */}
@@ -681,6 +695,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
   },
 });
+
 
 
 

@@ -129,6 +129,15 @@ export default function HomeScreen() {
               <Text style={styles.cardTitle}>🎤 Voice Assistant</Text>
               <Text style={styles.cardSubtitle}>{t('voice_assistant_sub')}</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.card, { backgroundColor: '#E8F5E9' }]}
+              onPress={() => router.push('/(tabs)/LowBandwidthScreen')}
+            >
+              <Text style={styles.cardIcon}>📶</Text>
+              <Text style={styles.cardTitle}>📶 Low Bandwidth Mode</Text>
+              <Text style={styles.cardSubtitle}>Optimize app usage for 2G and slow networks</Text>
+            </TouchableOpacity>
           </View>
         </View>
 

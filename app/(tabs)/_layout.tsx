@@ -57,6 +57,10 @@ export default function TabLayout() {
       <Tabs.Screen name="LanguageScreen" options={{ title: 'Language', href: null }} />
       <Tabs.Screen name="VoiceAssistantScreen" options={{ title: 'Voice', href: null }} />
       <Tabs.Screen
+        name="LowBandwidthScreen"
+        options={{ title: 'Low Bandwidth Mode', href: null }}
+      />
+      <Tabs.Screen
         name="PestIdentificationScreen"
         options={{ title: 'Pest Identification', href: null }}
       />
