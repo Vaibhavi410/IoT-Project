@@ -13,7 +13,11 @@ import AnalyzeScreen from "./screens/AnalyzeScreen";
 import ResultScreen from "./screens/ResultScreen";
 import HistoryScreen from "./screens/HistoryScreen";
 import TreatmentScreen from "./screens/TreatmentScreen";
+ feature/PDFReports
+import PestTimelineScreen from "./app/(tabs)/PestTimelineScreen.jsx";
+import PDFReportScreen from "./app/(tabs)/PDFReportScreen.jsx";
 import CropProtocolScreen from "./app/(tabs)/CropProtocolScreen.jsx";
+ main
 import { Colors, Typography, Spacing, Shadow } from "./constants/theme";
 
 const Stack = createStackNavigator();
@@ -145,8 +149,19 @@ export default function App() {
             />
 
             <Stack.Screen
+ feature/PDFReports
+              name="PestTimeline"
+              component={PestTimelineScreen}
+              options={{ headerShown: false }}
+            />
+
+            <Stack.Screen
+              name="PDFReport"
+              component={PDFReportScreen}
+
               name="CropProtocol"
               component={CropProtocolScreen}
+ main
               options={{ headerShown: false }}
             />
           </Stack.Navigator>
