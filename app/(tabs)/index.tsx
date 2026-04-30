@@ -40,6 +40,14 @@ export default function HomeScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
+          style={[styles.card, { backgroundColor: '#E8F5E9' }]}
+          onPress={() => router.push('/(tabs)/CropProtocolScreen')}
+        >
+          <Text style={styles.cardTitle}>🌾 Crop Protocol</Text>
+          <Text style={styles.cardSubtitle}>Stages, risks, and pest guidance by crop</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
           style={{
             backgroundColor: '#2E7D32',
             margin: 16,
@@ -79,6 +87,22 @@ export default function HomeScreen() {
           <Text style={styles.cardIcon}>🌦️</Text>
           <Text style={styles.cardTitle}>{t('weather')}</Text>
           <Text style={styles.cardSubtitle}>{t('weather_sub')}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.card, { backgroundColor: '#F1F8E9' }]}
+          onPress={() => router.push('/(tabs)/PestTimelineScreen')}
+        >
+          <Text style={styles.cardTitle}>📅 Pest Timeline</Text>
+          <Text style={styles.cardSubtitle}>Track pest activity on your farm over time</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.card, { backgroundColor: '#FFFDE7' }]}
+          onPress={() => router.push('/(tabs)/PDFReportScreen')}
+        >
+          <Text style={styles.cardTitle}>📄 PDF Reports</Text>
+          <Text style={styles.cardSubtitle}>Auto-generate pest analysis PDF report</Text>
         </TouchableOpacity>
 
         <TouchableOpacity

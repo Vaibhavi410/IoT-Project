@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { COLORS } from '../../constants/colors';
+import { useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import TreatmentCard from '../../components/TreatmentCard';
+ feature/VoiceAssistant
 import { useLanguage } from '../../context/LanguageContext';
+
+import { COLORS } from '../../constants/colors';
+ main
 
 // Dummy data for testing
 const pestData = {
@@ -48,7 +51,7 @@ export default function TreatmentScreen() {
   const { t } = useLanguage();
   // State to track which tier is expanded (1 is expanded by default)
   const [expandedTier, setExpandedTier] = useState(1);
-  
+
   // State to track applied treatments
   const [appliedTiers, setAppliedTiers] = useState({});
 
@@ -81,11 +84,16 @@ export default function TreatmentScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <View style={styles.headerInfoContainer}>
+ feature/VoiceAssistant
         <Text style={styles.title}>{t('treatment')}</Text>
         <Text style={styles.subtitle}>
           {t('target_label')}: {pestData.pest_name}
         </Text>
         
+        <Text style={styles.title}>Treatment Plan</Text>
+        <Text style={styles.subtitle}>Target: {pestData.pest_name}</Text>
+
+ main
         {/* Progress indicator */}
         <View style={styles.progressContainer}>
           <Text style={styles.progressText}>
@@ -125,11 +133,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     padding: 16,
     borderRadius: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    elevation: 5,
+
   },
   title: {
     fontSize: 24,
