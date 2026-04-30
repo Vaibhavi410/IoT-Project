@@ -51,6 +51,7 @@ export default function TabLayout() {
         name="PestIdentificationScreen"
         options={{ title: 'Pest Identification', href: null }}
       />
+      <Tabs.Screen name="SoilAnalysisScreen" options={{ title: 'Soil Analysis', href: null }} />
     </Tabs>
   );
 }

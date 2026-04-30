@@ -112,7 +112,7 @@ export default function HomeScreen({ navigation }) {
 
           <TouchableOpacity
             style={[styles.treatmentBtn, { marginTop: Spacing.md }]}
-            onPress={handleComingSoon}
+            onPress={() => navigation.navigate("SoilAnalysis")}
             activeOpacity={0.8}
           >
             <View style={styles.treatmentIconBox}>
@@ -120,7 +120,7 @@ export default function HomeScreen({ navigation }) {
             </View>
             <View style={styles.treatmentBtnInfo}>
               <Text style={styles.treatmentBtnTitle}>🪱 Soil Analysis</Text>
-              <Text style={styles.treatmentBtnSub}>{t("coming_soon")}</Text>
+              <Text style={styles.treatmentBtnSub}>Manual entry or IoT sensor readings</Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>

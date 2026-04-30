@@ -43,10 +43,13 @@ export default function HomeScreen() {
               <Text style={styles.cardSubtitle}>Take photo or upload to identify pests</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.card, { backgroundColor: '#F3E5F5' }]} onPress={comingSoon}>
+            <TouchableOpacity
+              style={[styles.card, { backgroundColor: '#F3E5F5' }]}
+              onPress={() => router.push('/(tabs)/SoilAnalysisScreen')}
+            >
               <Text style={styles.cardIcon}>🪱</Text>
               <Text style={styles.cardTitle}>🪱 Soil Analysis</Text>
-              <Text style={styles.cardSubtitle}>{t('coming_soon')}</Text>
+              <Text style={styles.cardSubtitle}>Manual entry or IoT sensor readings</Text>
             </TouchableOpacity>
           </View>
         </View>
