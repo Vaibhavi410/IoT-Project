@@ -14,6 +14,7 @@ import ResultScreen from "./screens/ResultScreen";
 import HistoryScreen from "./screens/HistoryScreen";
 import TreatmentScreen from "./screens/TreatmentScreen";
 import LanguageScreen from "./app/(tabs)/LanguageScreen.jsx";
+import VoiceAssistantScreen from "./app/(tabs)/VoiceAssistantScreen.jsx";
 import { LanguageProvider } from "./context/LanguageContext";
 import { Colors, Typography, Spacing, Shadow } from "./constants/theme";
 
@@ -131,6 +132,12 @@ export default function App() {
 
             {/* Treatment: title + back use t() via screen useLayoutEffect */}
             <Stack.Screen name="Treatment" component={TreatmentScreen} />
+
+            <Stack.Screen
+              name="VoiceAssistant"
+              component={VoiceAssistantScreen}
+              options={{ headerShown: false }}
+            />
 
             <Stack.Screen
               name="Language"

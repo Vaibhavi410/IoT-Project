@@ -199,6 +199,26 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
+        {/* Voice Assistant — voice-first crop Q&A (hybrid: record + type) */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.treatmentBtn}
+            onPress={() => navigation.navigate("VoiceAssistant")}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.treatmentIconBox, { backgroundColor: Colors.successBg }]}>
+              <Text style={{ fontSize: 24 }}>🎤</Text>
+            </View>
+            <View style={styles.treatmentBtnInfo}>
+              <Text style={styles.treatmentBtnTitle}>
+                🎤 {t("voice_assistant")}
+              </Text>
+              <Text style={styles.treatmentBtnSub}>{t("voice_assistant_sub")}</Text>
+            </View>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Recent Scans */}
         {recentScans.length > 0 && (
           <View style={styles.section}>
@@ -235,8 +255,18 @@ export default function HomeScreen({ navigation }) {
           <InfoStep number="4" text={t("how_step_4")} />
         </View>
 
-        <View style={{ height: 24 }} />
+        <View style={{ height: 88 }} />
       </ScrollView>
+
+      {/* Floating mic — opens Voice Assistant from any scroll position */}
+      <TouchableOpacity
+        style={styles.voiceFab}
+        onPress={() => navigation.navigate("VoiceAssistant")}
+        activeOpacity={0.9}
+        accessibilityLabel={t("voice_assistant")}
+      >
+        <Text style={styles.voiceFabEmoji}>🎤</Text>
+      </TouchableOpacity>
 
       <LanguageSelector visible={langOpen} onClose={() => setLangOpen(false)} />
     </View>
@@ -603,5 +633,23 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.xs,
     color: Colors.textMuted,
     marginTop: 2,
+  },
+  voiceFab: {
+    position: "absolute",
+    right: Spacing.lg,
+    bottom: Platform.OS === "ios" ? 96 : 80,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: Colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    ...Shadow.md,
+    elevation: 8,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.35)",
+  },
+  voiceFabEmoji: {
+    fontSize: 28,
   },
 });

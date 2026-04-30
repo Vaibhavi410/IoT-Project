@@ -17,8 +17,9 @@ import { useLanguage } from '../context/LanguageContext';
 /**
  * Reusable bottom-sheet style modal to pick a language from anywhere in the app.
  * Selecting a language updates the whole app instantly via LanguageContext.
+ * If onPickOverride is set (e.g. voice reply language only), it is called instead of setLanguage.
  */
-export default function LanguageSelector({ visible, onClose }) {
+export default function LanguageSelector({ visible, onClose, onPickOverride }) {
   const insets = useSafeAreaInsets();
   const { languageCode, setLanguage, t } = useLanguage();
   const [query, setQuery] = useState('');
@@ -36,6 +37,12 @@ export default function LanguageSelector({ visible, onClose }) {
   }, [query]);
 
   const pick = async (id) => {
+    if (onPickOverride) {
+      onPickOverride(id);
+      setQuery('');
+      onClose?.();
+      return;
+    }
     await setLanguage(id);
     setQuery('');
     onClose?.();

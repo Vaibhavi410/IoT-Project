@@ -44,6 +44,13 @@ export default function TabLayout() {
           href: null,
         }}
       />
+      <Tabs.Screen
+        name="VoiceAssistantScreen"
+        options={{
+          title: 'Voice',
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

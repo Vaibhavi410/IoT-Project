@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import LanguageSelector from '../../components/LanguageSelector';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -10,7 +10,8 @@ export default function HomeScreen() {
   const [langOpen, setLangOpen] = useState(false);
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.root}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.scrollPad}>
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <View style={styles.headerTextWrap}>
@@ -97,17 +98,42 @@ export default function HomeScreen() {
           <Text style={styles.cardTitle}>{t('crop_dashboard')}</Text>
           <Text style={styles.cardSubtitle}>{t('crop_dashboard_sub')}</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.card, { backgroundColor: '#E8F5E9', borderWidth: 2, borderColor: '#2E7D32' }]}
+          onPress={() => router.push('/VoiceAssistantScreen')}
+        >
+          <Text style={styles.cardIcon}>🎤</Text>
+          <Text style={styles.cardTitle}>🎤 {t('voice_assistant')}</Text>
+          <Text style={styles.cardSubtitle}>{t('voice_assistant_sub')}</Text>
+        </TouchableOpacity>
       </View>
 
       <LanguageSelector visible={langOpen} onClose={() => setLangOpen(false)} />
-    </ScrollView>
+
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => router.push('/VoiceAssistantScreen')}
+        activeOpacity={0.9}
+        accessibilityLabel={t('voice_assistant')}
+      >
+        <Text style={styles.fabEmoji}>🎤</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: '#F1F8E9',
+  },
   container: {
     flex: 1,
     backgroundColor: '#F1F8E9',
+  },
+  scrollPad: {
+    paddingBottom: 100,
   },
   header: {
     paddingVertical: 40,
@@ -166,5 +192,26 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#757575',
     marginTop: 4,
+  },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: Platform.OS === 'ios' ? 32 : 24,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#2E7D32',
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.35)',
+  },
+  fabEmoji: {
+    fontSize: 28,
   },
 });
