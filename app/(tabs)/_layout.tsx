@@ -38,14 +38,25 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+ feature/VoiceAssistant
+        name="LanguageScreen"
+        options={{
+          title: 'Language',
+
  feature/PDFReports
         name="PestTimelineScreen"
         options={{
           title: 'Pest Timeline',
+ main
           href: null,
         }}
       />
       <Tabs.Screen
+ feature/VoiceAssistant
+        name="VoiceAssistantScreen"
+        options={{
+          title: 'Voice',
+
         name="PDFReportScreen"
         options={{
           title: 'PDF Reports',
@@ -53,6 +64,7 @@ export default function TabLayout() {
         name="CropProtocolScreen"
         options={{
           title: 'Crop Protocol',
+ main
  main
           href: null,
         }}

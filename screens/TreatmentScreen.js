@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useLayoutEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Colors, Typography, Spacing, Radius } from '../constants/theme';
 import TreatmentCard from '../components/TreatmentCard';
 import ToxicityWarningModal from '../components/ToxicityWarningModal';
+import { useLanguage } from '../context/LanguageContext';
 
 // Dummy data for testing
 const pestData = {
@@ -67,6 +69,8 @@ const dummyToxicityData = {
 };
 
 export default function TreatmentScreen() {
+  const navigation = useNavigation();
+  const { t } = useLanguage();
   const [expandedTier, setExpandedTier] = useState(1);
   const [appliedTiers, setAppliedTiers] = useState({});
   const [modalVisible, setModalVisible] = useState(false);
@@ -112,16 +116,43 @@ export default function TreatmentScreen() {
     }
   }
 
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: t('treatment'),
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={{ paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm }}
+        >
+          <Text
+            style={{
+              fontSize: Typography.sizes.md,
+              color: Colors.white,
+              fontWeight: Typography.weights.medium,
+            }}
+          >
+            ‹ {t('back')}
+          </Text>
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, t]);
+
   return (
     <View style={{ flex: 1 }}>
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
         <View style={styles.headerInfoContainer}>
-          <Text style={styles.title}>Treatment Plan</Text>
-          <Text style={styles.subtitle}>Target: {pestData.pest_name}</Text>
-          
+          <Text style={styles.title}>{t('treatment')}</Text>
+          <Text style={styles.subtitle}>
+            {t('target_label')}: {pestData.pest_name}
+          </Text>
+
           <View style={styles.progressContainer}>
             <Text style={styles.progressText}>
-              Progress: {currentTier === 'Complete' ? 'All Treatments Applied' : `Currently on Tier ${currentTier}`}
+              {t('progress_label')}:{' '}
+              {currentTier === 'Complete'
+                ? t('all_treatments_applied')
+                : `${t('currently_on_tier')} ${currentTier}`}
             </Text>
           </View>
         </View>
