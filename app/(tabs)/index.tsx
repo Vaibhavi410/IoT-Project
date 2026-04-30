@@ -34,10 +34,13 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>AI Features</Text>
           <View style={styles.grid}>
-            <TouchableOpacity style={[styles.card, { backgroundColor: '#FFF8E1' }]} onPress={comingSoon}>
+            <TouchableOpacity
+              style={[styles.card, { backgroundColor: '#FFF8E1' }]}
+              onPress={() => router.push('/(tabs)/PestIdentificationScreen')}
+            >
               <Text style={styles.cardIcon}>📷</Text>
               <Text style={styles.cardTitle}>📷 Pest Identification</Text>
-              <Text style={styles.cardSubtitle}>{t('coming_soon')}</Text>
+              <Text style={styles.cardSubtitle}>Take photo or upload to identify pests</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={[styles.card, { backgroundColor: '#F3E5F5' }]} onPress={comingSoon}>

@@ -47,6 +47,10 @@ export default function TabLayout() {
       <Tabs.Screen name="PDFReportScreen" options={{ title: 'PDF Reports', href: null }} />
       <Tabs.Screen name="LanguageScreen" options={{ title: 'Language', href: null }} />
       <Tabs.Screen name="VoiceAssistantScreen" options={{ title: 'Voice', href: null }} />
+      <Tabs.Screen
+        name="PestIdentificationScreen"
+        options={{ title: 'Pest Identification', href: null }}
+      />
     </Tabs>
   );
 }

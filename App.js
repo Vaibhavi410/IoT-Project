@@ -19,6 +19,7 @@ import LanguageScreen from "./app/(tabs)/LanguageScreen.jsx";
 import VoiceAssistantScreen from "./app/(tabs)/VoiceAssistantScreen.jsx";
 import PestTimelineScreen from "./app/(tabs)/PestTimelineScreen.jsx";
 import PDFReportScreen from "./app/(tabs)/PDFReportScreen.jsx";
+import PestIdentificationScreen from "./app/(tabs)/PestIdentificationScreen.jsx";
 import { LanguageProvider } from "./context/LanguageContext";
 import { Colors, Typography, Spacing, Shadow } from "./constants/theme";
 
@@ -131,6 +132,12 @@ export default function App() {
               />
 
               <Stack.Screen name="Treatment" component={TreatmentScreen} />
+
+              <Stack.Screen
+                name="PestIdentification"
+                component={PestIdentificationScreen}
+                options={{ headerShown: false }}
+              />
 
               <Stack.Screen
                 name="VoiceAssistant"

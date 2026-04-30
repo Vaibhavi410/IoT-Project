@@ -97,7 +97,7 @@ export default function HomeScreen({ navigation }) {
 
           <TouchableOpacity
             style={styles.treatmentBtn}
-            onPress={handleComingSoon}
+            onPress={() => navigation.navigate("PestIdentification")}
             activeOpacity={0.8}
           >
             <View style={styles.treatmentIconBox}>
@@ -105,7 +105,7 @@ export default function HomeScreen({ navigation }) {
             </View>
             <View style={styles.treatmentBtnInfo}>
               <Text style={styles.treatmentBtnTitle}>📷 Pest Identification</Text>
-              <Text style={styles.treatmentBtnSub}>{t("coming_soon")}</Text>
+              <Text style={styles.treatmentBtnSub}>Take photo or upload to identify pests</Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
