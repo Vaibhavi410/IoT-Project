@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { COLORS } from '../../constants/colors';
+import { useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import TreatmentCard from '../../components/TreatmentCard';
+import { COLORS } from '../../constants/colors';
 
 // Dummy data for testing
 const pestData = {
@@ -46,7 +46,7 @@ const pestData = {
 export default function TreatmentScreen() {
   // State to track which tier is expanded (1 is expanded by default)
   const [expandedTier, setExpandedTier] = useState(1);
-  
+
   // State to track applied treatments
   const [appliedTiers, setAppliedTiers] = useState({});
 
@@ -81,7 +81,7 @@ export default function TreatmentScreen() {
       <View style={styles.headerInfoContainer}>
         <Text style={styles.title}>Treatment Plan</Text>
         <Text style={styles.subtitle}>Target: {pestData.pest_name}</Text>
-        
+
         {/* Progress indicator */}
         <View style={styles.progressContainer}>
           <Text style={styles.progressText}>
@@ -118,11 +118,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     padding: 16,
     borderRadius: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    elevation: 5,
+
   },
   title: {
     fontSize: 24,

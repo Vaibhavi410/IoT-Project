@@ -186,6 +186,7 @@ export default function HomeScreen({ navigation }) {
 
           <TouchableOpacity
             style={[styles.treatmentBtn, { marginTop: Spacing.md }]}
+ feature/PDFReports
             onPress={() => navigation.navigate("PestTimeline")}
             activeOpacity={0.8}
           >
@@ -210,6 +211,17 @@ export default function HomeScreen({ navigation }) {
             <View style={styles.treatmentBtnInfo}>
               <Text style={styles.treatmentBtnTitle}>📄 PDF Reports</Text>
               <Text style={styles.treatmentBtnSub}>Auto-generate pest analysis PDF report</Text>
+
+            onPress={() => navigation.navigate("CropProtocol")}
+            activeOpacity={0.8}
+          >
+            <View style={styles.treatmentIconBox}>
+              <Text style={{ fontSize: 24 }}>🌾</Text>
+            </View>
+            <View style={styles.treatmentBtnInfo}>
+              <Text style={styles.treatmentBtnTitle}>Crop Protocol</Text>
+              <Text style={styles.treatmentBtnSub}>Stages, risks, and pest guidance by crop</Text>
+ main
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>

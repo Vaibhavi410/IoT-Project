@@ -38,6 +38,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+ feature/PDFReports
         name="PestTimelineScreen"
         options={{
           title: 'Pest Timeline',
@@ -48,6 +49,11 @@ export default function TabLayout() {
         name="PDFReportScreen"
         options={{
           title: 'PDF Reports',
+
+        name="CropProtocolScreen"
+        options={{
+          title: 'Crop Protocol',
+ main
           href: null,
         }}
       />
