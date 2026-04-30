@@ -38,6 +38,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+feature/WeatherAdvisory
+        name="CropProtocolScreen"
+        options={{
+          title: 'Crop Protocol',
+
  feature/VoiceAssistant
         name="LanguageScreen"
         options={{
@@ -48,10 +53,16 @@ export default function TabLayout() {
         options={{
           title: 'Pest Timeline',
  main
+ main
           href: null,
         }}
       />
       <Tabs.Screen
+feature/WeatherAdvisory
+        name="WeatherAdvisoryScreen"
+        options={{
+          title: 'Weather Advisory',
+
  feature/VoiceAssistant
         name="VoiceAssistantScreen"
         options={{
@@ -64,6 +75,7 @@ export default function TabLayout() {
         name="CropProtocolScreen"
         options={{
           title: 'Crop Protocol',
+ main
  main
  main
           href: null,

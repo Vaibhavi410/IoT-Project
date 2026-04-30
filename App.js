@@ -13,6 +13,10 @@ import AnalyzeScreen from "./screens/AnalyzeScreen";
 import ResultScreen from "./screens/ResultScreen";
 import HistoryScreen from "./screens/HistoryScreen";
 import TreatmentScreen from "./screens/TreatmentScreen";
+ feature/WeatherAdvisory
+import CropProtocolScreen from "./app/(tabs)/CropProtocolScreen.jsx";
+import WeatherAdvisoryScreen from "./app/(tabs)/WeatherAdvisoryScreen.jsx";
+
  feature/VoiceAssistant
 import LanguageScreen from "./app/(tabs)/LanguageScreen.jsx";
 import VoiceAssistantScreen from "./app/(tabs)/VoiceAssistantScreen.jsx";
@@ -24,6 +28,7 @@ import PDFReportScreen from "./app/(tabs)/PDFReportScreen.jsx";
 import CropProtocolScreen from "./app/(tabs)/CropProtocolScreen.jsx";
  main
 main
+ main
 import { Colors, Typography, Spacing, Shadow } from "./constants/theme";
 
 const Stack = createStackNavigator();
@@ -167,6 +172,18 @@ export default function App() {
               name="CropProtocol"
               component={CropProtocolScreen}
  main
+              options={{ headerShown: false }}
+            />
+
+            <Stack.Screen
+              name="CropProtocol"
+              component={CropProtocolScreen}
+              options={{ headerShown: false }}
+            />
+
+            <Stack.Screen
+              name="WeatherAdvisory"
+              component={WeatherAdvisoryScreen}
               options={{ headerShown: false }}
             />
           </Stack.Navigator>
