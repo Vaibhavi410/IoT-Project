@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import LanguageSelector from '../../components/LanguageSelector';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -9,154 +9,125 @@ export default function HomeScreen() {
   const { t } = useLanguage();
   const [langOpen, setLangOpen] = useState(false);
 
+  const comingSoon = () => Alert.alert(t('coming_soon'));
+
   return (
     <View style={styles.root}>
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollPad}>
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <View style={styles.headerTextWrap}>
-            <Text style={styles.appName}>🌿 {t('app_name')}</Text>
-            <Text style={styles.tagline}>{t('tagline')}</Text>
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollPad}>
+        <View style={styles.header}>
+          <View style={styles.headerRow}>
+            <View style={styles.headerTextWrap}>
+              <Text style={styles.appName}>🌿 {t('app_name')}</Text>
+              <Text style={styles.tagline}>{t('tagline')}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.globeBtn}
+              onPress={() => setLangOpen(true)}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityLabel="Language"
+            >
+              <Text style={styles.globeText}>🌐</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.globeBtn}
-            onPress={() => setLangOpen(true)}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            accessibilityLabel="Language"
-          >
-            <Text style={styles.globeText}>🌐</Text>
-          </TouchableOpacity>
         </View>
-      </View>
 
-      <View style={styles.grid}>
-        <TouchableOpacity
-          style={[styles.card, { backgroundColor: '#E8F5E9' }]}
-          onPress={() => router.push('/TreatmentScreen')}
-        >
-          <Text style={styles.cardIcon}>💊</Text>
-          <Text style={styles.cardTitle}>{t('treatment')}</Text>
-          <Text style={styles.cardSubtitle}>{t('treatment_sub')}</Text>
-        </TouchableOpacity>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>AI Features</Text>
+          <View style={styles.grid}>
+            <TouchableOpacity style={[styles.card, { backgroundColor: '#FFF8E1' }]} onPress={comingSoon}>
+              <Text style={styles.cardIcon}>📷</Text>
+              <Text style={styles.cardTitle}>📷 Pest Identification</Text>
+              <Text style={styles.cardSubtitle}>{t('coming_soon')}</Text>
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.card, { backgroundColor: '#E8F5E9' }]}
-          onPress={() => router.push('/(tabs)/CropProtocolScreen')}
-        >
-          <Text style={styles.cardTitle}>🌾 Crop Protocol</Text>
-          <Text style={styles.cardSubtitle}>Stages, risks, and pest guidance by crop</Text>
-        </TouchableOpacity>
+            <TouchableOpacity style={[styles.card, { backgroundColor: '#F3E5F5' }]} onPress={comingSoon}>
+              <Text style={styles.cardIcon}>🪱</Text>
+              <Text style={styles.cardTitle}>🪱 Soil Analysis</Text>
+              <Text style={styles.cardSubtitle}>{t('coming_soon')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
-        <TouchableOpacity
-          style={[styles.card, { backgroundColor: '#E8F5E9' }]}
-          onPress={() => router.push('/(tabs)/CropProtocolScreen')}
-        >
-          <Text style={styles.cardTitle}>🌾 Crop Protocol</Text>
-          <Text style={styles.cardSubtitle}>Stages, risks, and pest guidance by crop</Text>
-        </TouchableOpacity>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Treatment &amp; Protocol</Text>
+          <View style={styles.grid}>
+            <TouchableOpacity
+              style={[styles.card, { backgroundColor: '#E8F5E9' }]}
+              onPress={() => router.push('/(tabs)/TreatmentScreen')}
+            >
+              <Text style={styles.cardIcon}>💊</Text>
+              <Text style={styles.cardTitle}>💊 Treatment Plan</Text>
+              <Text style={styles.cardSubtitle}>{t('treatment_sub')}</Text>
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          style={{
-            backgroundColor: '#2E7D32',
-            margin: 16,
-            padding: 16,
-            borderRadius: 14,
-            alignItems: 'center',
-          }}
-          onPress={() => router.push('/TreatmentScreen')}
-        >
-          <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>
-            💊 {t('view_treatment_plan')}
-          </Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.card, { backgroundColor: '#E8F5E9' }]}
+              onPress={() => router.push('/(tabs)/CropProtocolScreen')}
+            >
+              <Text style={styles.cardIcon}>🌾</Text>
+              <Text style={styles.cardTitle}>🌾 Crop Protocol</Text>
+              <Text style={styles.cardSubtitle}>Stages, risks, and prevention schedule</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
-        <TouchableOpacity
-          style={[styles.card, { backgroundColor: '#FFF8E1' }]}
-          onPress={() => alert(t('coming_soon'))}
-        >
-          <Text style={styles.cardIcon}>🐛</Text>
-          <Text style={styles.cardTitle}>{t('pest_id')}</Text>
-          <Text style={styles.cardSubtitle}>{t('pest_id_sub')}</Text>
-        </TouchableOpacity>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Monitoring</Text>
+          <View style={styles.grid}>
+            <TouchableOpacity
+              style={[styles.card, { backgroundColor: '#F1F8E9' }]}
+              onPress={() => router.push('/(tabs)/PestTimelineScreen')}
+            >
+              <Text style={styles.cardIcon}>📅</Text>
+              <Text style={styles.cardTitle}>📅 Pest Timeline</Text>
+              <Text style={styles.cardSubtitle}>Track pest activity on your farm over time</Text>
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.card, { backgroundColor: '#F3E5F5' }]}
-          onPress={() => alert(t('coming_soon'))}
-        >
-          <Text style={styles.cardIcon}>🪱</Text>
-          <Text style={styles.cardTitle}>{t('soil')}</Text>
-          <Text style={styles.cardSubtitle}>{t('soil_sub')}</Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.card, { backgroundColor: '#E3F2FD' }]}
+              onPress={() => router.push('/(tabs)/WeatherAdvisoryScreen')}
+            >
+              <Text style={styles.cardIcon}>🌦️</Text>
+              <Text style={styles.cardTitle}>🌦️ Weather Advisory</Text>
+              <Text style={styles.cardSubtitle}>Pest risk forecast and spraying guidance</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
-        <TouchableOpacity
-          style={[styles.card, { backgroundColor: '#E3F2FD' }]}
- feature/WeatherAdvisory
-          onPress={() => router.push('/(tabs)/WeatherAdvisoryScreen')}
-        >
-          <Text style={styles.cardTitle}>🌦️ Weather Advisory</Text>
-          <Text style={styles.cardSubtitle}>Pest outbreak forecast</Text>
-          onPress={() => alert(t('coming_soon'))}
-        >
-          <Text style={styles.cardIcon}>🌦️</Text>
-          <Text style={styles.cardTitle}>{t('weather')}</Text>
-          <Text style={styles.cardSubtitle}>{t('weather_sub')}</Text>
-        </TouchableOpacity>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Reports &amp; Tools</Text>
+          <View style={styles.grid}>
+            <TouchableOpacity
+              style={[styles.card, { backgroundColor: '#FFFDE7' }]}
+              onPress={() => router.push('/(tabs)/PDFReportScreen')}
+            >
+              <Text style={styles.cardIcon}>📄</Text>
+              <Text style={styles.cardTitle}>📄 PDF Reports</Text>
+              <Text style={styles.cardSubtitle}>Auto-generate pest analysis PDF report</Text>
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.card, { backgroundColor: '#F1F8E9' }]}
-          onPress={() => router.push('/(tabs)/PestTimelineScreen')}
-        >
-          <Text style={styles.cardTitle}>📅 Pest Timeline</Text>
-          <Text style={styles.cardSubtitle}>Track pest activity on your farm over time</Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.card, { backgroundColor: '#E8F5E9' }]}
+              onPress={() => router.push('/(tabs)/LanguageScreen')}
+            >
+              <Text style={styles.cardIcon}>🌐</Text>
+              <Text style={styles.cardTitle}>🌐 Language Support</Text>
+              <Text style={styles.cardSubtitle}>Switch app language</Text>
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.card, { backgroundColor: '#FFFDE7' }]}
-          onPress={() => router.push('/(tabs)/PDFReportScreen')}
-        >
-          <Text style={styles.cardTitle}>📄 PDF Reports</Text>
-          <Text style={styles.cardSubtitle}>Auto-generate pest analysis PDF report</Text>
- main
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.card, { backgroundColor: '#E8F5E9' }]}
+              onPress={() => router.push('/(tabs)/VoiceAssistantScreen')}
+            >
+              <Text style={styles.cardIcon}>🎤</Text>
+              <Text style={styles.cardTitle}>🎤 Voice Assistant</Text>
+              <Text style={styles.cardSubtitle}>{t('voice_assistant_sub')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
-        <TouchableOpacity
-          style={[styles.card, { backgroundColor: '#FCE4EC' }]}
-          onPress={() => alert(t('coming_soon'))}
-        >
-          <Text style={styles.cardIcon}>💬</Text>
-          <Text style={styles.cardTitle}>{t('chat')}</Text>
-          <Text style={styles.cardSubtitle}>{t('chat_sub')}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.card, { backgroundColor: '#E0F7FA' }]}
-          onPress={() => alert(t('coming_soon'))}
-        >
-          <Text style={styles.cardIcon}>📊</Text>
-          <Text style={styles.cardTitle}>{t('crop_dashboard')}</Text>
-          <Text style={styles.cardSubtitle}>{t('crop_dashboard_sub')}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.card, { backgroundColor: '#E8F5E9', borderWidth: 2, borderColor: '#2E7D32' }]}
-          onPress={() => router.push('/VoiceAssistantScreen')}
-        >
-          <Text style={styles.cardIcon}>🎤</Text>
-          <Text style={styles.cardTitle}>🎤 {t('voice_assistant')}</Text>
-          <Text style={styles.cardSubtitle}>{t('voice_assistant_sub')}</Text>
-        </TouchableOpacity>
-      </View>
-
-      <LanguageSelector visible={langOpen} onClose={() => setLangOpen(false)} />
-
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => router.push('/VoiceAssistantScreen')}
-        activeOpacity={0.9}
-        accessibilityLabel={t('voice_assistant')}
-      >
-        <Text style={styles.fabEmoji}>🎤</Text>
-      </TouchableOpacity>
+        <LanguageSelector visible={langOpen} onClose={() => setLangOpen(false)} />
+      </ScrollView>
     </View>
   );
 }
@@ -172,6 +143,16 @@ const styles = StyleSheet.create({
   },
   scrollPad: {
     paddingBottom: 100,
+  },
+  section: {
+    paddingHorizontal: 16,
+    paddingTop: 14,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#1B5E20',
+    marginBottom: 10,
   },
   header: {
     paddingVertical: 40,
@@ -209,7 +190,6 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   grid: {
-    padding: 16,
     gap: 12,
   },
   card: {

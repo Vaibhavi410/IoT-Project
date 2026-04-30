@@ -11,7 +11,6 @@ import {
   StatusBar,
   Platform,
 } from "react-native";
-import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "@react-navigation/native";
 import { getScanHistory, formatTimestamp } from "../services/historyStorage";
@@ -49,50 +48,8 @@ export default function HomeScreen({ navigation }) {
     setRecentScans(history.slice(0, 4));
   }
 
-  async function handleCamera() {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        t("camera_permission_title"),
-        t("camera_permission_message"),
-        [{ text: t("ok") }]
-      );
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.85,
-      allowsEditing: true,
-      aspect: [4, 3],
-    });
-
-    if (!result.canceled && result.assets?.[0]) {
-      navigation.navigate("Analyze", { imageAsset: result.assets[0] });
-    }
-  }
-
-  async function handleGallery() {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        t("gallery_permission_title"),
-        t("gallery_permission_message"),
-        [{ text: t("ok") }]
-      );
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.85,
-      allowsEditing: true,
-      aspect: [4, 3],
-    });
-
-    if (!result.canceled && result.assets?.[0]) {
-      navigation.navigate("Analyze", { imageAsset: result.assets[0] });
-    }
+  function handleComingSoon() {
+    Alert.alert(t("coming_soon"));
   }
 
   return (
@@ -134,40 +91,39 @@ export default function HomeScreen({ navigation }) {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Scan Buttons */}
+        {/* Section 1: AI Features */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t("identify_section")}</Text>
-          <View style={styles.scanButtons}>
-            <TouchableOpacity
-              style={[styles.scanBtn, styles.scanBtnPrimary]}
-              onPress={handleCamera}
-              activeOpacity={0.85}
-            >
-              <LinearGradient
-                colors={[Colors.primary, Colors.primaryLight]}
-                style={styles.scanBtnGradient}
-              >
-                <Text style={styles.scanBtnIcon}>📷</Text>
-                <Text style={styles.scanBtnTitle}>{t("take_photo")}</Text>
-                <Text style={styles.scanBtnSub}>{t("use_camera")}</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+          <Text style={styles.sectionLabel}>AI Features</Text>
 
-            <TouchableOpacity
-              style={[styles.scanBtn, styles.scanBtnSecondary]}
-              onPress={handleGallery}
-              activeOpacity={0.85}
-            >
-              <LinearGradient
-                colors={[Colors.accent, Colors.accentLight]}
-                style={styles.scanBtnGradient}
-              >
-                <Text style={styles.scanBtnIcon}>🖼️</Text>
-                <Text style={styles.scanBtnTitle}>{t("from_gallery")}</Text>
-                <Text style={styles.scanBtnSub}>{t("pick_image")}</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={styles.treatmentBtn}
+            onPress={handleComingSoon}
+            activeOpacity={0.8}
+          >
+            <View style={styles.treatmentIconBox}>
+              <Text style={{ fontSize: 24 }}>📷</Text>
+            </View>
+            <View style={styles.treatmentBtnInfo}>
+              <Text style={styles.treatmentBtnTitle}>📷 Pest Identification</Text>
+              <Text style={styles.treatmentBtnSub}>{t("coming_soon")}</Text>
+            </View>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.treatmentBtn, { marginTop: Spacing.md }]}
+            onPress={handleComingSoon}
+            activeOpacity={0.8}
+          >
+            <View style={styles.treatmentIconBox}>
+              <Text style={{ fontSize: 24 }}>🪱</Text>
+            </View>
+            <View style={styles.treatmentBtnInfo}>
+              <Text style={styles.treatmentBtnTitle}>🪱 Soil Analysis</Text>
+              <Text style={styles.treatmentBtnSub}>{t("coming_soon")}</Text>
+            </View>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Stats Row */}
@@ -181,8 +137,10 @@ export default function HomeScreen({ navigation }) {
           <StatCard icon="⚡" label={t("ai_speed")} value="~5s" />
         </View>
 
-        {/* Treatment Plan Feature */}
+        {/* Section 2: Treatment & Protocol */}
         <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Treatment & Protocol</Text>
+
           <TouchableOpacity
             style={styles.treatmentBtn}
             onPress={() => navigation.navigate("Treatment")}
@@ -192,35 +150,34 @@ export default function HomeScreen({ navigation }) {
               <Text style={{ fontSize: 24 }}>💊</Text>
             </View>
             <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>{t("view_treatment_plan")}</Text>
+              <Text style={styles.treatmentBtnTitle}>💊 Treatment Plan</Text>
               <Text style={styles.treatmentBtnSub}>{t("treatment_sub")}</Text>
-            </View>
-            <Text style={styles.chevron}>›</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Voice Assistant — voice-first crop Q&A (hybrid: record + type) */}
-        <View style={styles.section}>
-          <TouchableOpacity
-            style={styles.treatmentBtn}
-            onPress={() => navigation.navigate("VoiceAssistant")}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.treatmentIconBox, { backgroundColor: Colors.successBg }]}>
-              <Text style={{ fontSize: 24 }}>🎤</Text>
-            </View>
-            <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>
-                🎤 {t("voice_assistant")}
-              </Text>
-              <Text style={styles.treatmentBtnSub}>{t("voice_assistant_sub")}</Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.treatmentBtn, { marginTop: Spacing.md }]}
- feature/PDFReports
+            onPress={() => navigation.navigate("CropProtocol")}
+            activeOpacity={0.8}
+          >
+            <View style={styles.treatmentIconBox}>
+              <Text style={{ fontSize: 24 }}>🌾</Text>
+            </View>
+            <View style={styles.treatmentBtnInfo}>
+              <Text style={styles.treatmentBtnTitle}>🌾 Crop Protocol</Text>
+              <Text style={styles.treatmentBtnSub}>Stages, risks, and prevention schedule</Text>
+            </View>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Section 3: Monitoring */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Monitoring</Text>
+
+          <TouchableOpacity
+            style={styles.treatmentBtn}
             onPress={() => navigation.navigate("PestTimeline")}
             activeOpacity={0.8}
           >
@@ -236,6 +193,26 @@ export default function HomeScreen({ navigation }) {
 
           <TouchableOpacity
             style={[styles.treatmentBtn, { marginTop: Spacing.md }]}
+            onPress={() => navigation.navigate("WeatherAdvisory")}
+            activeOpacity={0.8}
+          >
+            <View style={styles.treatmentIconBox}>
+              <Text style={{ fontSize: 24 }}>🌦️</Text>
+            </View>
+            <View style={styles.treatmentBtnInfo}>
+              <Text style={styles.treatmentBtnTitle}>🌦️ Weather Advisory</Text>
+              <Text style={styles.treatmentBtnSub}>Pest risk forecast and spraying guidance</Text>
+            </View>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Section 4: Reports & Tools */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Reports & Tools</Text>
+
+          <TouchableOpacity
+            style={styles.treatmentBtn}
             onPress={() => navigation.navigate("PDFReport")}
             activeOpacity={0.8}
           >
@@ -245,47 +222,36 @@ export default function HomeScreen({ navigation }) {
             <View style={styles.treatmentBtnInfo}>
               <Text style={styles.treatmentBtnTitle}>📄 PDF Reports</Text>
               <Text style={styles.treatmentBtnSub}>Auto-generate pest analysis PDF report</Text>
-
-            onPress={() => navigation.navigate("CropProtocol")}
-            activeOpacity={0.8}
-          >
-            <View style={styles.treatmentIconBox}>
-              <Text style={{ fontSize: 24 }}>🌾</Text>
-            </View>
-            <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>Crop Protocol</Text>
-              <Text style={styles.treatmentBtnSub}>Stages, risks, and pest guidance by crop</Text>
- main
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.treatmentBtn, { marginTop: Spacing.md }]}
-            onPress={() => navigation.navigate("CropProtocol")}
+            onPress={() => navigation.navigate("Language")}
             activeOpacity={0.8}
           >
             <View style={styles.treatmentIconBox}>
-              <Text style={{ fontSize: 24 }}>🌾</Text>
+              <Text style={{ fontSize: 24 }}>🌐</Text>
             </View>
             <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>Crop Protocol</Text>
-              <Text style={styles.treatmentBtnSub}>Stages, risks, and prevention schedule</Text>
+              <Text style={styles.treatmentBtnTitle}>🌐 Language Support</Text>
+              <Text style={styles.treatmentBtnSub}>Switch app language</Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.treatmentBtn, { marginTop: Spacing.md }]}
-            onPress={() => navigation.navigate("WeatherAdvisory")}
+            onPress={() => navigation.navigate("VoiceAssistant")}
             activeOpacity={0.8}
           >
-            <View style={styles.treatmentIconBox}>
-              <Text style={{ fontSize: 24 }}>🌦️</Text>
+            <View style={[styles.treatmentIconBox, { backgroundColor: Colors.successBg }]}>
+              <Text style={{ fontSize: 24 }}>🎤</Text>
             </View>
             <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>Weather Advisory</Text>
-              <Text style={styles.treatmentBtnSub}>Pest risk forecast and spraying guidance</Text>
+              <Text style={styles.treatmentBtnTitle}>🎤 Voice Assistant</Text>
+              <Text style={styles.treatmentBtnSub}>{t("voice_assistant_sub")}</Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
@@ -329,16 +295,6 @@ export default function HomeScreen({ navigation }) {
 
         <View style={{ height: 88 }} />
       </ScrollView>
-
-      {/* Floating mic — opens Voice Assistant from any scroll position */}
-      <TouchableOpacity
-        style={styles.voiceFab}
-        onPress={() => navigation.navigate("VoiceAssistant")}
-        activeOpacity={0.9}
-        accessibilityLabel={t("voice_assistant")}
-      >
-        <Text style={styles.voiceFabEmoji}>🎤</Text>
-      </TouchableOpacity>
 
       <LanguageSelector visible={langOpen} onClose={() => setLangOpen(false)} />
     </View>
