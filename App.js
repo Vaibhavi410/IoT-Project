@@ -13,8 +13,22 @@ import AnalyzeScreen from "./screens/AnalyzeScreen";
 import ResultScreen from "./screens/ResultScreen";
 import HistoryScreen from "./screens/HistoryScreen";
 import TreatmentScreen from "./screens/TreatmentScreen";
+ feature/WeatherAdvisory
 import CropProtocolScreen from "./app/(tabs)/CropProtocolScreen.jsx";
 import WeatherAdvisoryScreen from "./app/(tabs)/WeatherAdvisoryScreen.jsx";
+
+ feature/VoiceAssistant
+import LanguageScreen from "./app/(tabs)/LanguageScreen.jsx";
+import VoiceAssistantScreen from "./app/(tabs)/VoiceAssistantScreen.jsx";
+import { LanguageProvider } from "./context/LanguageContext";
+
+ feature/PDFReports
+import PestTimelineScreen from "./app/(tabs)/PestTimelineScreen.jsx";
+import PDFReportScreen from "./app/(tabs)/PDFReportScreen.jsx";
+import CropProtocolScreen from "./app/(tabs)/CropProtocolScreen.jsx";
+ main
+main
+ main
 import { Colors, Typography, Spacing, Shadow } from "./constants/theme";
 
 const Stack = createStackNavigator();
@@ -69,6 +83,7 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
+        <LanguageProvider>
         <StatusBar style="light" />
         <NavigationContainer>
           <Stack.Navigator
@@ -128,21 +143,36 @@ export default function App() {
               })}
             />
 
-            {/* Treatment Screen */}
+            {/* Treatment: title + back use t() via screen useLayoutEffect */}
+            <Stack.Screen name="Treatment" component={TreatmentScreen} />
+
             <Stack.Screen
-              name="Treatment"
-              component={TreatmentScreen}
-              options={({ navigation }) => ({
-                title: "Treatment Plan",
-                headerLeft: () => (
-                  <TouchableOpacity
-                    onPress={() => navigation.goBack()}
-                    style={styles.backBtn}
-                  >
-                    <Text style={styles.backBtnText}>‹ Back</Text>
-                  </TouchableOpacity>
-                ),
-              })}
+              name="VoiceAssistant"
+              component={VoiceAssistantScreen}
+              options={{ headerShown: false }}
+            />
+
+            <Stack.Screen
+              name="Language"
+              component={LanguageScreen}
+              options={{ headerShown: false }}
+            />
+
+            <Stack.Screen
+ feature/PDFReports
+              name="PestTimeline"
+              component={PestTimelineScreen}
+              options={{ headerShown: false }}
+            />
+
+            <Stack.Screen
+              name="PDFReport"
+              component={PDFReportScreen}
+
+              name="CropProtocol"
+              component={CropProtocolScreen}
+ main
+              options={{ headerShown: false }}
             />
 
             <Stack.Screen
@@ -158,6 +188,7 @@ export default function App() {
             />
           </Stack.Navigator>
         </NavigationContainer>
+        </LanguageProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

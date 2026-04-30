@@ -38,16 +38,46 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+feature/WeatherAdvisory
         name="CropProtocolScreen"
         options={{
           title: 'Crop Protocol',
+
+ feature/VoiceAssistant
+        name="LanguageScreen"
+        options={{
+          title: 'Language',
+
+ feature/PDFReports
+        name="PestTimelineScreen"
+        options={{
+          title: 'Pest Timeline',
+ main
+ main
           href: null,
         }}
       />
       <Tabs.Screen
+feature/WeatherAdvisory
         name="WeatherAdvisoryScreen"
         options={{
           title: 'Weather Advisory',
+
+ feature/VoiceAssistant
+        name="VoiceAssistantScreen"
+        options={{
+          title: 'Voice',
+
+        name="PDFReportScreen"
+        options={{
+          title: 'PDF Reports',
+
+        name="CropProtocolScreen"
+        options={{
+          title: 'Crop Protocol',
+ main
+ main
+ main
           href: null,
         }}
       />

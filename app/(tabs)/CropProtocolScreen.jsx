@@ -85,6 +85,9 @@ export default function CropProtocolScreen() {
   const [selectedCrop, setSelectedCrop] = useState('Tomato');
   const [expandedStageId, setExpandedStageId] = useState(1);
   const [preventionDone, setPreventionDone] = useState({});
+ feature/WeatherAdvisory
+  // Keep opacity high so the banner stays readable (0.35 looked “invisible” on many devices).
+ main
   const pulseAnim = useRef(new Animated.Value(0.92)).current;
 
   useEffect(() => {
