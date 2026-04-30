@@ -23,6 +23,8 @@ const TOMATO_PROTOCOL = {
   season: 'Kharif / Rabi',
   duration: '95-120 days',
   vulnerableStage: 'Flowering to Fruit Set',
+  feature: '',
+  prevention_schedule: PREVENTION_SCHEDULE,
   stages: [
     {
       id: 1,
@@ -85,9 +87,7 @@ export default function CropProtocolScreen() {
   const [selectedCrop, setSelectedCrop] = useState('Tomato');
   const [expandedStageId, setExpandedStageId] = useState(1);
   const [preventionDone, setPreventionDone] = useState({});
- feature/WeatherAdvisory
   // Keep opacity high so the banner stays readable (0.35 looked “invisible” on many devices).
- main
   const pulseAnim = useRef(new Animated.Value(0.92)).current;
 
   useEffect(() => {
@@ -111,6 +111,30 @@ export default function CropProtocolScreen() {
       emoji: '🌱',
     };
   }, [selectedCrop]);
+
+  if (!currentData) {
+    return (
+      <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
+        <View style={styles.toolbar}>
+          <Pressable
+            onPress={() => goBackCompat(navigation)}
+            style={styles.backBtn}
+            hitSlop={12}
+          >
+            <Text style={styles.backBtnText}>← Back</Text>
+          </Pressable>
+          <Text style={styles.toolbarTitle}>Crop protocol</Text>
+          <View style={styles.toolbarSpacer} />
+        </View>
+        <View style={styles.overviewCard}>
+          <Text style={styles.cropTitle}>Loading…</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const stages = currentData?.stages || [];
+  const preventionSchedule = currentData?.prevention_schedule || PREVENTION_SCHEDULE;
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
@@ -152,40 +176,40 @@ export default function CropProtocolScreen() {
 
         <View style={styles.overviewCard}>
           <Text style={styles.cropTitle}>
-            {currentData.emoji} {currentData.crop}
+            {currentData?.emoji || ''} {currentData?.crop || ''}
           </Text>
           <View style={styles.overviewRow}>
             <Text style={styles.overviewLabel}>Season</Text>
-            <Text style={styles.overviewValue}>{currentData.season}</Text>
+            <Text style={styles.overviewValue}>{currentData?.season || ''}</Text>
           </View>
           <View style={styles.overviewRow}>
             <Text style={styles.overviewLabel}>Duration</Text>
-            <Text style={styles.overviewValue}>{currentData.duration}</Text>
+            <Text style={styles.overviewValue}>{currentData?.duration || ''}</Text>
           </View>
           <View style={styles.overviewRow}>
             <Text style={styles.overviewLabel}>Most Vulnerable Stage</Text>
-            <Text style={styles.overviewValue}>{currentData.vulnerableStage}</Text>
+            <Text style={styles.overviewValue}>{currentData?.vulnerableStage || ''}</Text>
           </View>
         </View>
 
         <View style={styles.stepperWrap}>
-          {currentData.stages.map((stage, index) => (
-            <View key={stage.id} style={styles.stageRow}>
+          {stages?.map((stage, index) => (
+            <View key={stage?.id ?? String(index)} style={styles.stageRow}>
               <View style={styles.stepperRail}>
                 <View
                   style={[
                     styles.stepDot,
-                    expandedStageId === stage.id && { backgroundColor: COLORS.primary },
+                    expandedStageId === stage?.id && { backgroundColor: COLORS.primary },
                   ]}
                 />
-                {index !== currentData.stages.length - 1 && <View style={styles.stepLine} />}
+                {index !== (stages?.length || 0) - 1 && <View style={styles.stepLine} />}
               </View>
               <View style={styles.stageCardWrap}>
                 <StageCard
                   stage={stage}
-                  isExpanded={expandedStageId === stage.id}
+                  isExpanded={expandedStageId === stage?.id}
                   onPress={() =>
-                    setExpandedStageId((prev) => (prev === stage.id ? null : stage.id))
+                    setExpandedStageId((prev) => (prev === stage?.id ? null : stage?.id))
                   }
                 />
               </View>
@@ -195,13 +219,14 @@ export default function CropProtocolScreen() {
 
         <View style={styles.preventionCard}>
           <Text style={styles.preventionTitle}>Prevention Schedule</Text>
-          {PREVENTION_SCHEDULE.map((item, index) => {
-            const isDone = !!preventionDone[item.id];
+          {preventionSchedule?.map((item, index) => {
+            const id = item?.id || String(index);
+            const isDone = !!preventionDone?.[id];
             return (
               <Pressable
-                key={item.id}
+                key={id}
                 onPress={() =>
-                  setPreventionDone((prev) => ({ ...prev, [item.id]: !prev[item.id] }))
+                  setPreventionDone((prev) => ({ ...prev, [id]: !prev?.[id] }))
                 }
                 style={[styles.preventionRow, index === 0 && styles.preventionRowFirst]}
               >
@@ -210,10 +235,10 @@ export default function CropProtocolScreen() {
                 </View>
                 <View style={styles.preventionTextWrap}>
                   <Text style={[styles.preventionWeek, isDone && styles.preventionTextDone]}>
-                    {item.week}
+                    {item?.week || ''}
                   </Text>
                   <Text style={[styles.preventionAction, isDone && styles.preventionTextDone]}>
-                    {item.action}
+                    {item?.action || ''}
                   </Text>
                 </View>
               </Pressable>

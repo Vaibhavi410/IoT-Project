@@ -15,72 +15,56 @@ export default function TabLayout() {
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
         tabBarButton: HapticTab,
-      }}>
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: 'Scan',
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="house.fill" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="KnowledgeFeedScreen"
+        options={{
+          title: 'Feed',
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="newspaper.fill" color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="explore"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'History',
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="clock.fill" color={color} />
+          ),
         }}
       />
-      <Tabs.Screen
-        name="TreatmentScreen"
-        options={{
-          title: 'Treatment',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="cross.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-feature/WeatherAdvisory
-        name="CropProtocolScreen"
-        options={{
-          title: 'Crop Protocol',
 
- feature/VoiceAssistant
-        name="LanguageScreen"
-        options={{
-          title: 'Language',
-
- feature/PDFReports
-        name="PestTimelineScreen"
-        options={{
-          title: 'Pest Timeline',
- main
- main
-          href: null,
-        }}
-      />
+      {/* Keep these routes available but hidden from the tab bar */}
+      <Tabs.Screen name="TreatmentScreen" options={{ title: 'Treatment', href: null }} />
+      <Tabs.Screen name="CropProtocolScreen" options={{ title: 'Crop Protocol', href: null }} />
       <Tabs.Screen
-feature/WeatherAdvisory
         name="WeatherAdvisoryScreen"
-        options={{
-          title: 'Weather Advisory',
-
- feature/VoiceAssistant
-        name="VoiceAssistantScreen"
-        options={{
-          title: 'Voice',
-
-        name="PDFReportScreen"
-        options={{
-          title: 'PDF Reports',
-
-        name="CropProtocolScreen"
-        options={{
-          title: 'Crop Protocol',
- main
- main
- main
-          href: null,
-        }}
+        options={{ title: 'Weather Advisory', href: null }}
       />
+      <Tabs.Screen name="PestTimelineScreen" options={{ title: 'Pest Timeline', href: null }} />
+      <Tabs.Screen name="PDFReportScreen" options={{ title: 'PDF Reports', href: null }} />
+      <Tabs.Screen name="LanguageScreen" options={{ title: 'Language', href: null }} />
+      <Tabs.Screen name="VoiceAssistantScreen" options={{ title: 'Voice', href: null }} />
+      <Tabs.Screen
+        name="LowBandwidthScreen"
+        options={{ title: 'Low Bandwidth Mode', href: null }}
+      />
+      <Tabs.Screen
+        name="PestIdentificationScreen"
+        options={{ title: 'Pest Identification', href: null }}
+      />
+      <Tabs.Screen name="SoilAnalysisScreen" options={{ title: 'Soil Analysis', href: null }} />
     </Tabs>
   );
 }

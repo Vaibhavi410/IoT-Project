@@ -13,28 +13,22 @@ import AnalyzeScreen from "./screens/AnalyzeScreen";
 import ResultScreen from "./screens/ResultScreen";
 import HistoryScreen from "./screens/HistoryScreen";
 import TreatmentScreen from "./screens/TreatmentScreen";
- feature/WeatherAdvisory
 import CropProtocolScreen from "./app/(tabs)/CropProtocolScreen.jsx";
 import WeatherAdvisoryScreen from "./app/(tabs)/WeatherAdvisoryScreen.jsx";
-
- feature/VoiceAssistant
 import LanguageScreen from "./app/(tabs)/LanguageScreen.jsx";
 import VoiceAssistantScreen from "./app/(tabs)/VoiceAssistantScreen.jsx";
-import { LanguageProvider } from "./context/LanguageContext";
-
- feature/PDFReports
 import PestTimelineScreen from "./app/(tabs)/PestTimelineScreen.jsx";
 import PDFReportScreen from "./app/(tabs)/PDFReportScreen.jsx";
-import CropProtocolScreen from "./app/(tabs)/CropProtocolScreen.jsx";
- main
-main
- main
+import PestIdentificationScreen from "./app/(tabs)/PestIdentificationScreen.jsx";
+import SoilAnalysisScreen from "./app/(tabs)/SoilAnalysisScreen.jsx";
+import KnowledgeFeedScreen from "./app/(tabs)/KnowledgeFeedScreen.jsx";
+import LowBandwidthScreen from "./app/(tabs)/LowBandwidthScreen.jsx";
+import { LanguageProvider } from "./context/LanguageContext";
 import { Colors, Typography, Spacing, Shadow } from "./constants/theme";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Bottom Tab Navigation (Home + History)
 function MainTabs() {
   return (
     <Tab.Navigator
@@ -53,6 +47,16 @@ function MainTabs() {
           tabBarLabel: "Scan",
           tabBarIcon: ({ focused }) => (
             <TabIcon emoji="🔬" focused={focused} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Feed"
+        component={KnowledgeFeedScreen}
+        options={{
+          tabBarLabel: "Feed",
+          tabBarIcon: ({ focused }) => (
+            <TabIcon emoji={"\uD83D\uDCF0"} focused={focused} />
           ),
         }}
       />
@@ -78,116 +82,131 @@ function TabIcon({ emoji, focused }) {
   );
 }
 
-// Root Stack (includes modal screens)
 export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <LanguageProvider>
-        <StatusBar style="light" />
-        <NavigationContainer>
-          <Stack.Navigator
-            screenOptions={{
-              headerStyle: styles.header,
-              headerTintColor: Colors.white,
-              headerTitleStyle: styles.headerTitle,
-              headerBackTitleVisible: false,
-              headerShadowVisible: false,
-            }}
-          >
-            {/* Main Tab Navigator */}
-            <Stack.Screen
-              name="Main"
-              component={MainTabs}
-              options={{ headerShown: false }}
-            />
+          <StatusBar style="light" />
+          <NavigationContainer>
+            <Stack.Navigator
+              screenOptions={{
+                headerStyle: styles.header,
+                headerTintColor: Colors.white,
+                headerTitleStyle: styles.headerTitle,
+                headerBackTitleVisible: false,
+                headerShadowVisible: false,
+              }}
+            >
+              <Stack.Screen
+                name="Main"
+                component={MainTabs}
+                options={{ headerShown: false }}
+              />
 
-            {/* Analyze Screen */}
-            <Stack.Screen
-              name="Analyze"
-              component={AnalyzeScreen}
-              options={({ navigation }) => ({
-                title: "Analyze Image",
-                headerLeft: () => (
-                  <TouchableOpacity
-                    onPress={() => navigation.goBack()}
-                    style={styles.backBtn}
-                  >
-                    <Text style={styles.backBtnText}>‹ Back</Text>
-                  </TouchableOpacity>
-                ),
-              })}
-            />
+              <Stack.Screen
+                name="Analyze"
+                component={AnalyzeScreen}
+                options={({ navigation }) => ({
+                  title: "Analyze Image",
+                  headerLeft: () => (
+                    <TouchableOpacity
+                      onPress={() => navigation.goBack()}
+                      style={styles.backBtn}
+                    >
+                      <Text style={styles.backBtnText}>‹ Back</Text>
+                    </TouchableOpacity>
+                  ),
+                })}
+              />
 
-            {/* Result Screen */}
-            <Stack.Screen
-              name="Result"
-              component={ResultScreen}
-              options={({ navigation, route }) => ({
-                title: "Pest Identified",
-                headerLeft: () => (
-                  <TouchableOpacity
-                    onPress={() => {
-                      if (route.params?.fromHistory) {
-                        navigation.goBack();
-                      } else {
-                        navigation.navigate("Main");
-                      }
-                    }}
-                    style={styles.backBtn}
-                  >
-                    <Text style={styles.backBtnText}>‹ {route.params?.fromHistory ? "Back" : "Home"}</Text>
-                  </TouchableOpacity>
-                ),
-                headerRight: () => null,
-              })}
-            />
+              <Stack.Screen
+                name="Result"
+                component={ResultScreen}
+                options={({ navigation, route }) => ({
+                  title: "Pest Identified",
+                  headerLeft: () => (
+                    <TouchableOpacity
+                      onPress={() => {
+                        if (route.params?.fromHistory) {
+                          navigation.goBack();
+                        } else {
+                          navigation.navigate("Main");
+                        }
+                      }}
+                      style={styles.backBtn}
+                    >
+                      <Text style={styles.backBtnText}>
+                        ‹ {route.params?.fromHistory ? "Back" : "Home"}
+                      </Text>
+                    </TouchableOpacity>
+                  ),
+                })}
+              />
 
-            {/* Treatment: title + back use t() via screen useLayoutEffect */}
-            <Stack.Screen name="Treatment" component={TreatmentScreen} />
+              <Stack.Screen name="Treatment" component={TreatmentScreen} />
 
-            <Stack.Screen
-              name="VoiceAssistant"
-              component={VoiceAssistantScreen}
-              options={{ headerShown: false }}
-            />
+              <Stack.Screen
+                name="PestIdentification"
+                component={PestIdentificationScreen}
+                options={{ headerShown: false }}
+              />
 
-            <Stack.Screen
-              name="Language"
-              component={LanguageScreen}
-              options={{ headerShown: false }}
-            />
+              <Stack.Screen
+                name="SoilAnalysis"
+                component={SoilAnalysisScreen}
+                options={{ headerShown: false }}
+              />
 
-            <Stack.Screen
- feature/PDFReports
-              name="PestTimeline"
-              component={PestTimelineScreen}
-              options={{ headerShown: false }}
-            />
+              <Stack.Screen
+                name="VoiceAssistant"
+                component={VoiceAssistantScreen}
+                options={{ headerShown: false }}
+              />
 
-            <Stack.Screen
-              name="PDFReport"
-              component={PDFReportScreen}
+              <Stack.Screen
+                name="Language"
+                component={LanguageScreen}
+                options={{ headerShown: false }}
+              />
 
-              name="CropProtocol"
-              component={CropProtocolScreen}
- main
-              options={{ headerShown: false }}
-            />
+              <Stack.Screen
+                name="PestTimeline"
+                component={PestTimelineScreen}
+                options={{ headerShown: false }}
+              />
 
-            <Stack.Screen
-              name="CropProtocol"
-              component={CropProtocolScreen}
-              options={{ headerShown: false }}
-            />
+              <Stack.Screen
+                name="PDFReport"
+                component={PDFReportScreen}
+                options={{ headerShown: false }}
+              />
 
-            <Stack.Screen
-              name="WeatherAdvisory"
-              component={WeatherAdvisoryScreen}
-              options={{ headerShown: false }}
-            />
-          </Stack.Navigator>
-        </NavigationContainer>
+              <Stack.Screen
+                name="CropProtocol"
+                component={CropProtocolScreen}
+                options={{ headerShown: false }}
+              />
+
+              <Stack.Screen
+                name="WeatherAdvisory"
+                component={WeatherAdvisoryScreen}
+                options={{ headerShown: false }}
+              />
+
+              <Stack.Screen
+                name="KnowledgeFeed"
+                component={KnowledgeFeedScreen}
+                options={{ headerShown: false }}
+              />
+
+              <Stack.Screen
+                name="LowBandwidth"
+                component={LowBandwidthScreen}
+                options={{ headerShown: false }}
+              />
+            </Stack.Navigator>
+          </NavigationContainer>
         </LanguageProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
@@ -213,7 +232,6 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontWeight: Typography.weights.medium,
   },
-
   tabBar: {
     backgroundColor: Colors.white,
     borderTopWidth: 1,

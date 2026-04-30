@@ -1,11 +1,9 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import TreatmentCard from '../../components/TreatmentCard';
- feature/VoiceAssistant
 import { useLanguage } from '../../context/LanguageContext';
 
 import { COLORS } from '../../constants/colors';
- main
 
 // Dummy data for testing
 const pestData = {
@@ -84,16 +82,8 @@ export default function TreatmentScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <View style={styles.headerInfoContainer}>
- feature/VoiceAssistant
-        <Text style={styles.title}>{t('treatment')}</Text>
-        <Text style={styles.subtitle}>
-          {t('target_label')}: {pestData.pest_name}
-        </Text>
-        
         <Text style={styles.title}>Treatment Plan</Text>
         <Text style={styles.subtitle}>Target: {pestData.pest_name}</Text>
-
- main
         {/* Progress indicator */}
         <View style={styles.progressContainer}>
           <Text style={styles.progressText}>
