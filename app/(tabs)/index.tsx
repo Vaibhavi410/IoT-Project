@@ -2,6 +2,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -49,7 +50,7 @@ export default function HomeScreen() {
               onPress={() => router.push("/(tabs)/PestIdentificationScreen")}
             >
               <Text style={styles.cardIcon}>📷</Text>
-              <Text style={styles.cardTitle}>📷 Pest Identification</Text>
+              <Text style={styles.cardTitle}>Pest Identification</Text>
               <Text style={styles.cardSubtitle}>
                 Take photo or upload to identify pests
               </Text>
@@ -60,7 +61,7 @@ export default function HomeScreen() {
               onPress={() => router.push("/(tabs)/SoilAnalysisScreen")}
             >
               <Text style={styles.cardIcon}>🪱</Text>
-              <Text style={styles.cardTitle}>🪱 Soil Analysis</Text>
+              <Text style={styles.cardTitle}>Soil Analysis</Text>
               <Text style={styles.cardSubtitle}>
                 Manual entry or IoT sensor readings
               </Text>
@@ -76,7 +77,7 @@ export default function HomeScreen() {
               onPress={() => router.push("/(tabs)/TreatmentScreen")}
             >
               <Text style={styles.cardIcon}>💊</Text>
-              <Text style={styles.cardTitle}>💊 Treatment Plan</Text>
+              <Text style={styles.cardTitle}>Treatment Plan</Text>
               <Text style={styles.cardSubtitle}>{t("treatment_sub")}</Text>
             </TouchableOpacity>
 
@@ -85,7 +86,7 @@ export default function HomeScreen() {
               onPress={() => router.push("/(tabs)/CropProtocolScreen")}
             >
               <Text style={styles.cardIcon}>🌾</Text>
-              <Text style={styles.cardTitle}>🌾 Crop Protocol</Text>
+              <Text style={styles.cardTitle}>Crop Protocol</Text>
               <Text style={styles.cardSubtitle}>
                 Stages, risks, and prevention schedule
               </Text>
@@ -101,7 +102,7 @@ export default function HomeScreen() {
               onPress={() => router.push("/(tabs)/PestTimelineScreen")}
             >
               <Text style={styles.cardIcon}>📅</Text>
-              <Text style={styles.cardTitle}>📅 Pest Timeline</Text>
+              <Text style={styles.cardTitle}>Pest Timeline</Text>
               <Text style={styles.cardSubtitle}>
                 Track pest activity on your farm over time
               </Text>
@@ -112,7 +113,7 @@ export default function HomeScreen() {
               onPress={() => router.push("/(tabs)/WeatherAdvisoryScreen")}
             >
               <Text style={styles.cardIcon}>🌦️</Text>
-              <Text style={styles.cardTitle}>🌦️ Weather Advisory</Text>
+              <Text style={styles.cardTitle}>Weather Advisory</Text>
               <Text style={styles.cardSubtitle}>
                 Pest risk forecast and spraying guidance
               </Text>
@@ -128,7 +129,7 @@ export default function HomeScreen() {
               onPress={() => router.push("/(tabs)/PDFReportScreen")}
             >
               <Text style={styles.cardIcon}>📄</Text>
-              <Text style={styles.cardTitle}>📄 PDF Reports</Text>
+              <Text style={styles.cardTitle}>PDF Reports</Text>
               <Text style={styles.cardSubtitle}>
                 Auto-generate pest analysis PDF report
               </Text>
@@ -171,27 +172,6 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            <TouchableOpacity
-              style={[styles.card, { backgroundColor: "#E8F5E9" }]}
-              onPress={() => router.push("/(tabs)/VoiceAssistantScreen")}
-            >
-              <Text style={styles.cardIcon}>🎤</Text>
-              <Text style={styles.cardTitle}>🎤 Voice Assistant</Text>
-              <Text style={styles.cardSubtitle}>
-                {t("voice_assistant_sub")}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.card, { backgroundColor: "#E8F5E9" }]}
-              onPress={() => router.push("/(tabs)/LowBandwidthScreen")}
-            >
-              <Text style={styles.cardIcon}>📶</Text>
-              <Text style={styles.cardTitle}>📶 Low Bandwidth Mode</Text>
-              <Text style={styles.cardSubtitle}>
-                Optimize app usage for 2G and slow networks
-              </Text>
-            </TouchableOpacity>
           </View>
         </View>
 

@@ -94,16 +94,17 @@ export default function HomeScreen({ navigation }) {
             <Text style={styles.tagline}>{t("scan_tagline")}</Text>
           </View>
           <TouchableOpacity
-  style={styles.langBtn}
-  onPress={handleSignOut}
-  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
->
-  <Text style={styles.langBtnText}>🚪</Text>
-</TouchableOpacity>
-<View style={styles.leafBadge}>
-  <Text style={styles.leafEmoji}>🌿</Text>
-</View>
-</View>
+              style={styles.signOutBtn}
+              onPress={handleSignOut}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityLabel="Sign Out"
+            >
+              <Text style={styles.signOutText}>Sign Out</Text>
+            </TouchableOpacity>
+            <View style={styles.leafBadge}>
+              <Text style={styles.leafEmoji}>🌿</Text>
+            </View>
+          </View>
 
         {/* Tip carousel */}
         <View style={styles.tipBox}>
@@ -451,17 +452,20 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingRight: Spacing.sm,
   },
-  langBtn: {
-    width: 44,
+  signOutBtn: {
+    minWidth: 88,
     height: 44,
     borderRadius: 22,
     backgroundColor: "rgba(255,255,255,0.15)",
     alignItems: "center",
     justifyContent: "center",
     marginRight: Spacing.sm,
+    paddingHorizontal: Spacing.sm,
   },
-  langBtnText: {
-    fontSize: 22,
+  signOutText: {
+    color: Colors.white,
+    fontSize: Typography.sizes.xs,
+    fontWeight: Typography.weights.semibold,
   },
   appName: {
     fontSize: Typography.sizes.xxxl,

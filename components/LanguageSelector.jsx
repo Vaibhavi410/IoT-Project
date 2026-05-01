@@ -15,7 +15,7 @@ import { Colors as COLORS } from '../constants/theme';
 import { LANGUAGE_CATALOG } from '../constants/translations';
 import { useLanguage } from '../context/LanguageContext';
 
-export default function LanguageSelector({ visible, onClose, onPickOverride }) {
+export default function LanguageSelector({ visible, onClose, onPickOverride = undefined }) {
   const insets = useSafeAreaInsets();
   const { languageCode, setLanguage, t } = useLanguage();
   const [query, setQuery] = useState('');

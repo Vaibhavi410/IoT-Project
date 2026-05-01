@@ -152,9 +152,9 @@ export default function HistoryScreen({ navigation }) {
               </Text>
               <TouchableOpacity
                 style={styles.startBtn}
-                onPress={() => navigation.navigate("Home")}
+                onPress={() => navigation.navigate("Main", { screen: "Home" })}
               >
-                <Text style={styles.startBtnText}>Start Scanning →</Text>
+                <Text style={styles.startBtnText}>Start Scanning</Text>
               </TouchableOpacity>
             </View>
           )

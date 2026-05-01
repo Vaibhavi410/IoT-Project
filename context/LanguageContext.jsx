@@ -12,7 +12,16 @@ import { DEFAULT_LANG, TRANSLATIONS } from '../constants/translations';
 /** Key used in AsyncStorage to remember the user's language. */
 const STORAGE_KEY = '@pestify_language_code';
 
-const LanguageContext = createContext(null);
+/**
+ * @typedef {{
+ *   languageCode: string;
+ *   setLanguage: (code: string) => Promise<void>;
+ *   t: (key: string) => string;
+ *   ready: boolean;
+ * }} LanguageContextValue
+ */
+
+const LanguageContext = createContext(/** @type {LanguageContextValue | null} */ (null));
 
 /**
  * Wrap your app (or navigation root) with LanguageProvider so any screen
