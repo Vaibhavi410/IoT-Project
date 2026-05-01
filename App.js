@@ -1,30 +1,38 @@
 // App.js
-import React from "react";
-import { Platform, TouchableOpacity, Text, StyleSheet, View } from "react-native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StatusBar } from "expo-status-bar";
+import {
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import HomeScreen from "./screens/HomeScreen";
-import AnalyzeScreen from "./screens/AnalyzeScreen";
-import ResultScreen from "./screens/ResultScreen";
-import HistoryScreen from "./screens/HistoryScreen";
-import TreatmentScreen from "./screens/TreatmentScreen";
 import CropProtocolScreen from "./app/(tabs)/CropProtocolScreen.jsx";
-import WeatherAdvisoryScreen from "./app/(tabs)/WeatherAdvisoryScreen.jsx";
+import KnowledgeFeedScreen from "./app/(tabs)/KnowledgeFeedScreen.jsx";
 import LanguageScreen from "./app/(tabs)/LanguageScreen.jsx";
-import VoiceAssistantScreen from "./app/(tabs)/VoiceAssistantScreen.jsx";
-import PestTimelineScreen from "./app/(tabs)/PestTimelineScreen.jsx";
+import LowBandwidthScreen from "./app/(tabs)/LowBandwidthScreen.jsx";
 import PDFReportScreen from "./app/(tabs)/PDFReportScreen.jsx";
 import PestIdentificationScreen from "./app/(tabs)/PestIdentificationScreen.jsx";
+import PestTimelineScreen from "./app/(tabs)/PestTimelineScreen.jsx";
 import SoilAnalysisScreen from "./app/(tabs)/SoilAnalysisScreen.jsx";
-import KnowledgeFeedScreen from "./app/(tabs)/KnowledgeFeedScreen.jsx";
-import LowBandwidthScreen from "./app/(tabs)/LowBandwidthScreen.jsx";
+import VoiceAssistantScreen from "./app/(tabs)/VoiceAssistantScreen.jsx";
+import WeatherAdvisoryScreen from "./app/(tabs)/WeatherAdvisoryScreen.jsx";
+import { Colors, Shadow, Spacing, Typography } from "./constants/theme";
 import { LanguageProvider } from "./context/LanguageContext";
-import { Colors, Typography, Spacing, Shadow } from "./constants/theme";
+import AnalyzeScreen from "./screens/AnalyzeScreen";
+import HistoryScreen from "./screens/HistoryScreen";
+import HomeScreen from "./screens/HomeScreen";
+import OnboardingScreen from "./screens/OnboardingScreen";
+import ResultScreen from "./screens/ResultScreen";
+import SignInScreen from "./screens/SignInScreen";
+import SplashScreen from "./screens/SplashScreen";
+import TreatmentScreen from "./screens/TreatmentScreen";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -45,9 +53,7 @@ function MainTabs() {
         component={HomeScreen}
         options={{
           tabBarLabel: "Scan",
-          tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="🔬" focused={focused} />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon emoji="🔬" focused={focused} />,
         }}
       />
       <Tab.Screen
@@ -55,9 +61,7 @@ function MainTabs() {
         component={KnowledgeFeedScreen}
         options={{
           tabBarLabel: "Feed",
-          tabBarIcon: ({ focused }) => (
-            <TabIcon emoji={"\uD83D\uDCF0"} focused={focused} />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon emoji="📰" focused={focused} />,
         }}
       />
       <Tab.Screen
@@ -65,9 +69,7 @@ function MainTabs() {
         component={HistoryScreen}
         options={{
           tabBarLabel: "History",
-          tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="📋" focused={focused} />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon emoji="📋" focused={focused} />,
         }}
       />
     </Tab.Navigator>
@@ -90,6 +92,7 @@ export default function App() {
           <StatusBar style="light" />
           <NavigationContainer>
             <Stack.Navigator
+              initialRouteName="Splash"
               screenOptions={{
                 headerStyle: styles.header,
                 headerTintColor: Colors.white,
@@ -98,12 +101,31 @@ export default function App() {
                 headerShadowVisible: false,
               }}
             >
+              {/* Onboarding Flow */}
+              <Stack.Screen
+                name="Splash"
+                component={SplashScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="Onboarding"
+                component={OnboardingScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="SignIn"
+                component={SignInScreen}
+                options={{ headerShown: false }}
+              />
+
+              {/* Main App */}
               <Stack.Screen
                 name="Main"
                 component={MainTabs}
                 options={{ headerShown: false }}
               />
 
+              {/* Feature Screens */}
               <Stack.Screen
                 name="Analyze"
                 component={AnalyzeScreen}
@@ -119,7 +141,6 @@ export default function App() {
                   ),
                 })}
               />
-
               <Stack.Screen
                 name="Result"
                 component={ResultScreen}
@@ -143,63 +164,52 @@ export default function App() {
                   ),
                 })}
               />
-
               <Stack.Screen name="Treatment" component={TreatmentScreen} />
-
               <Stack.Screen
                 name="PestIdentification"
                 component={PestIdentificationScreen}
                 options={{ headerShown: false }}
               />
-
               <Stack.Screen
                 name="SoilAnalysis"
                 component={SoilAnalysisScreen}
                 options={{ headerShown: false }}
               />
-
               <Stack.Screen
                 name="VoiceAssistant"
                 component={VoiceAssistantScreen}
                 options={{ headerShown: false }}
               />
-
               <Stack.Screen
                 name="Language"
                 component={LanguageScreen}
                 options={{ headerShown: false }}
               />
-
               <Stack.Screen
                 name="PestTimeline"
                 component={PestTimelineScreen}
                 options={{ headerShown: false }}
               />
-
               <Stack.Screen
                 name="PDFReport"
                 component={PDFReportScreen}
                 options={{ headerShown: false }}
               />
-
               <Stack.Screen
                 name="CropProtocol"
                 component={CropProtocolScreen}
                 options={{ headerShown: false }}
               />
-
               <Stack.Screen
                 name="WeatherAdvisory"
                 component={WeatherAdvisoryScreen}
                 options={{ headerShown: false }}
               />
-
               <Stack.Screen
                 name="KnowledgeFeed"
                 component={KnowledgeFeedScreen}
                 options={{ headerShown: false }}
               />
-
               <Stack.Screen
                 name="LowBandwidth"
                 component={LowBandwidthScreen}

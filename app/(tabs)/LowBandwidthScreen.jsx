@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { COLORS } from '../../constants/colors';
+import { Colors as COLORS } from '../../constants/theme';
 
 export default function LowBandwidthScreen() {
   const [lowBandwidthEnabled, setLowBandwidthEnabled] = useState(true);

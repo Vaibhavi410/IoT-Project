@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,15 +11,10 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS } from '../constants/colors';
+import { Colors as COLORS } from '../constants/theme';
 import { LANGUAGE_CATALOG } from '../constants/translations';
 import { useLanguage } from '../context/LanguageContext';
 
-/**
- * Reusable bottom-sheet style modal to pick a language from anywhere in the app.
- * Selecting a language updates the whole app instantly via LanguageContext.
- * If onPickOverride is set (e.g. voice reply language only), it is called instead of setLanguage.
- */
 export default function LanguageSelector({ visible, onClose, onPickOverride }) {
   const insets = useSafeAreaInsets();
   const { languageCode, setLanguage, t } = useLanguage();
@@ -27,13 +23,11 @@ export default function LanguageSelector({ visible, onClose, onPickOverride }) {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return LANGUAGE_CATALOG;
-    return LANGUAGE_CATALOG.filter((row) => {
-      return (
-        row.englishName.toLowerCase().includes(q) ||
-        row.nativeName.toLowerCase().includes(q) ||
-        row.id.toLowerCase().includes(q)
-      );
-    });
+    return LANGUAGE_CATALOG.filter((row) =>
+      row.englishName.toLowerCase().includes(q) ||
+      row.nativeName.toLowerCase().includes(q) ||
+      row.id.toLowerCase().includes(q)
+    );
   }, [query]);
 
   const pick = async (id) => {
@@ -52,50 +46,50 @@ export default function LanguageSelector({ visible, onClose, onPickOverride }) {
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalRoot}>
         <Pressable style={styles.backdropFill} onPress={onClose} />
-        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-        <View style={styles.handle} />
-        <Text style={styles.sheetTitle}>{t('choose_language_sheet_title')}</Text>
+        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, Platform.OS === 'android' ? 24 : 16) }]}>
+          <View style={styles.handle} />
+          <Text style={styles.sheetTitle}>{t('choose_language_sheet_title') || 'Choose Language'}</Text>
 
-        <TextInput
-          style={styles.search}
-          placeholder={t('search_languages')}
-          placeholderTextColor={COLORS.gray}
-          value={query}
-          onChangeText={setQuery}
-        />
+          <TextInput
+            style={styles.search}
+            placeholder={t('search_languages') || 'Search languages'}
+            placeholderTextColor="#7B8F7B"
+            value={query}
+            onChangeText={setQuery}
+          />
 
-        <ScrollView
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.gridContent}
-        >
-          <View style={styles.grid}>
-            {filtered.map((lang) => {
-              const selected = languageCode === lang.id;
-              return (
-                <TouchableOpacity
-                  key={lang.id}
-                  style={[styles.card, selected && styles.cardSelected]}
-                  onPress={() => pick(lang.id)}
-                  activeOpacity={0.85}
-                >
-                  {selected ? (
-                    <View style={styles.checkBadge}>
-                      <Text style={styles.checkText}>✓</Text>
-                    </View>
-                  ) : null}
-                  <Text style={styles.flag}>{lang.flag}</Text>
-                  <Text style={styles.englishName}>{lang.englishName}</Text>
-                  <Text style={styles.nativeName}>{lang.nativeName}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </ScrollView>
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.gridContent}
+          >
+            <View style={styles.grid}>
+              {filtered.map((lang) => {
+                const selected = languageCode === lang.id;
+                return (
+                  <TouchableOpacity
+                    key={lang.id}
+                    style={[styles.card, selected && styles.cardSelected]}
+                    onPress={() => pick(lang.id)}
+                    activeOpacity={0.85}
+                  >
+                    {selected && (
+                      <View style={styles.checkBadge}>
+                        <Text style={styles.checkText}>✓</Text>
+                      </View>
+                    )}
+                    <Text style={styles.flag}>{lang.flag}</Text>
+                    <Text style={styles.englishName}>{lang.englishName}</Text>
+                    <Text style={styles.nativeName}>{lang.nativeName}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </ScrollView>
 
-        <TouchableOpacity style={styles.doneBtn} onPress={onClose} activeOpacity={0.9}>
-          <Text style={styles.doneBtnText}>{t('close')}</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.doneBtn} onPress={onClose} activeOpacity={0.9}>
+            <Text style={styles.doneBtnText}>{t('close') || 'Close'}</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </Modal>
@@ -103,16 +97,13 @@ export default function LanguageSelector({ visible, onClose, onPickOverride }) {
 }
 
 const styles = StyleSheet.create({
-  modalRoot: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
+  modalRoot: { flex: 1, justifyContent: 'flex-end' },
   backdropFill: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
   sheet: {
-    backgroundColor: COLORS.white,
+    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
     maxHeight: '88%',
@@ -131,7 +122,7 @@ const styles = StyleSheet.create({
   sheetTitle: {
     fontSize: 17,
     fontWeight: '800',
-    color: COLORS.text,
+    color: '#1B5E20',
     marginBottom: 12,
     textAlign: 'center',
   },
@@ -142,13 +133,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 15,
-    color: COLORS.text,
-    backgroundColor: COLORS.background,
+    color: '#1B5E20',
+    backgroundColor: '#F1F8E9',
     marginBottom: 12,
   },
-  gridContent: {
-    paddingBottom: 12,
-  },
+  gridContent: { paddingBottom: 12 },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -156,7 +145,7 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '48%',
-    backgroundColor: COLORS.background,
+    backgroundColor: '#F1F8E9',
     borderRadius: 14,
     padding: 12,
     marginBottom: 10,
@@ -165,7 +154,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   cardSelected: {
-    borderColor: COLORS.primary,
+    borderColor: '#2E7D32',
     backgroundColor: '#E8F5E9',
   },
   checkBadge: {
@@ -175,40 +164,21 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#2E7D32',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkText: {
-    color: COLORS.white,
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  flag: {
-    fontSize: 28,
-    marginBottom: 6,
-  },
-  englishName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.text,
-  },
-  nativeName: {
-    fontSize: 13,
-    color: COLORS.gray,
-    marginTop: 2,
-  },
+  checkText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
+  flag: { fontSize: 28, marginBottom: 6 },
+  englishName: { fontSize: 14, fontWeight: '700', color: '#1B5E20' },
+  nativeName: { fontSize: 13, color: '#757575', marginTop: 2 },
   doneBtn: {
-    marginTop: 4,
-    marginBottom: 4,
-    backgroundColor: COLORS.primary,
+    marginTop: 8,
+    marginBottom: 8,
+    backgroundColor: '#2E7D32',
     borderRadius: 12,
-    paddingVertical: 14,
+    paddingVertical: 16,
     alignItems: 'center',
   },
-  doneBtnText: {
-    color: COLORS.white,
-    fontWeight: '800',
-    fontSize: 16,
-  },
+  doneBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 16 },
 });

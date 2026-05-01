@@ -17,7 +17,7 @@ import * as Speech from 'expo-speech';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { COLORS } from '../../constants/colors';
+import { Colors as COLORS } from '../../constants/theme';
 import { DEFAULT_LANG, LANGUAGE_CATALOG, TRANSLATIONS } from '../../constants/translations';
 import { useLanguage } from '../../context/LanguageContext';
 import LanguageSelector from '../../components/LanguageSelector';

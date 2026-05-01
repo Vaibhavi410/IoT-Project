@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS } from '../../constants/colors';
+import { Colors as COLORS } from '../../constants/theme';
 import { LANGUAGE_CATALOG, TRANSLATIONS } from '../../constants/translations';
 import { useLanguage } from '../../context/LanguageContext';
 

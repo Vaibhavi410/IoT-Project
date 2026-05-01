@@ -1,4 +1,5 @@
 // screens/HomeScreen.js
+
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
@@ -12,7 +13,8 @@ import {
   Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useFocusEffect } from "@react-navigation/native";
+import { CommonActions, useFocusEffect } from "@react-navigation/native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getScanHistory, formatTimestamp } from "../services/historyStorage";
 import { Colors, Typography, Spacing, Radius, Shadow } from "../constants/theme";
 import LanguageSelector from "../components/LanguageSelector";
@@ -23,7 +25,32 @@ export default function HomeScreen({ navigation }) {
   const [recentScans, setRecentScans] = useState([]);
   const [tipIndex, setTipIndex] = useState(0);
   const [langOpen, setLangOpen] = useState(false);
-
+  const handleSignOut = () => {
+    Alert.alert(
+      "Sign Out",
+      "Are you sure you want to sign out?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Sign Out",
+          onPress: async () => {
+            await AsyncStorage.removeItem('user_name');
+            const stackNav = navigation.getParent?.()?.getParent?.();
+            const targetNav = stackNav || navigation;
+            const resetAction = CommonActions.reset({
+              index: 0,
+              routes: [{ name: 'SignIn' }],
+            });
+            if (targetNav?.dispatch) {
+              targetNav.dispatch(resetAction);
+            } else {
+              navigation.navigate('SignIn');
+            }
+          },
+        },
+      ]
+    );
+  };
   const tips = useMemo(
     () => [t("tip_0"), t("tip_1"), t("tip_2"), t("tip_3"), t("tip_4")],
     [t]
@@ -67,17 +94,16 @@ export default function HomeScreen({ navigation }) {
             <Text style={styles.tagline}>{t("scan_tagline")}</Text>
           </View>
           <TouchableOpacity
-            style={styles.langBtn}
-            onPress={() => setLangOpen(true)}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            accessibilityLabel="Language"
-          >
-            <Text style={styles.langBtnText}>🌐</Text>
-          </TouchableOpacity>
-          <View style={styles.leafBadge}>
-            <Text style={styles.leafEmoji}>🌿</Text>
-          </View>
-        </View>
+  style={styles.langBtn}
+  onPress={handleSignOut}
+  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+>
+  <Text style={styles.langBtnText}>🚪</Text>
+</TouchableOpacity>
+<View style={styles.leafBadge}>
+  <Text style={styles.leafEmoji}>🌿</Text>
+</View>
+</View>
 
         {/* Tip carousel */}
         <View style={styles.tipBox}>
@@ -228,7 +254,7 @@ export default function HomeScreen({ navigation }) {
 
           <TouchableOpacity
             style={[styles.treatmentBtn, { marginTop: Spacing.md }]}
-            onPress={() => navigation.navigate("Language")}
+            onPress={() => setLangOpen(true)}
             activeOpacity={0.8}
           >
             <View style={styles.treatmentIconBox}>

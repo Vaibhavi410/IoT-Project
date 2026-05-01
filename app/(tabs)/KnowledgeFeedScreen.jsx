@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Animated,
@@ -13,16 +13,16 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { COLORS } from '../../constants/colors';
+import { Colors as COLORS } from '../../constants/theme';
 
 const CATEGORY_FILTERS = ['All', 'Pest Alert', 'Tip', 'Weather', 'Success Story', 'Market'];
 
 const CATEGORY_META = {
-  'Pest Alert': { color: COLORS.danger, bg: '#FFEBEE', emoji: '🔴' },
-  Tip: { color: COLORS.primary, bg: '#E8F5E9', emoji: '🟢' },
-  Weather: { color: '#1976D2', bg: '#E3F2FD', emoji: '🔵' },
-  'Success Story': { color: '#F9A825', bg: '#FFFDE7', emoji: '⭐' },
-  Market: { color: COLORS.warning, bg: '#FFF8E1', emoji: '🟡' },
+  'Pest Alert': { color: COLORS.danger, bg: '#FFEBEE', emoji: '🐛' },
+  'Tip': { color: COLORS.primary, bg: '#E8F5E9', emoji: '💡' },
+  'Market': { color: COLORS.warning, bg: '#FFF8E1', emoji: '🌾' },
+  'Weather': { color: '#1565C0', bg: '#E3F2FD', emoji: '🌦️' },
+  'Success Story': { color: '#6A1B9A', bg: '#F3E5F5', emoji: '🏆' },
 };
 
 const INITIAL_POSTS = [
@@ -34,8 +34,7 @@ const INITIAL_POSTS = [
     category: 'Pest Alert',
     time: '2 hours ago',
     title: 'Whitefly outbreak spreading in Nashik district',
-    body:
-      'Noticed heavy whitefly infestation on my tomato crop. Neem oil spray helped control 60% within 3 days. Alert all nearby farmers!',
+    body: 'Noticed heavy whitefly infestation on my tomato crop. Neem oil spray helped control 60% within 3 days. Alert all nearby farmers!',
     likes: 34,
     comments: 12,
     hasImage: true,
@@ -48,8 +47,7 @@ const INITIAL_POSTS = [
     category: 'Tip',
     time: '5 hours ago',
     title: 'Best time to spray pesticide for maximum effect',
-    body:
-      'Always spray early morning before 8am or after 6pm. Avoid midday spraying — UV rays reduce effectiveness by 40%.',
+    body: 'Always spray early morning before 8am or after 6pm. Avoid midday spraying — UV rays reduce effectiveness by 40%.',
     likes: 89,
     comments: 28,
     hasImage: false,
@@ -57,13 +55,12 @@ const INITIAL_POSTS = [
   {
     id: '3',
     farmer: 'Vijay More',
-    avatar: '👨‍🌾',
+    avatar: '🧑‍🌾',
     location: 'Aurangabad',
     category: 'Success Story',
     time: '1 day ago',
     title: 'Saved 80% of cotton crop using Pestify recommendations',
-    body:
-      'Used the tiered treatment plan from Pestify. Started with neem oil, moved to bio spray. Saved ₹45,000 worth of cotton this season!',
+    body: 'Used the tiered treatment plan from Pestify. Started with neem oil, moved to bio spray. Saved ₹45,000 worth of cotton this season!',
     likes: 156,
     comments: 45,
     hasImage: true,
@@ -76,8 +73,7 @@ const INITIAL_POSTS = [
     category: 'Weather',
     time: '3 hours ago',
     title: 'Rain expected next week — protect your crops now',
-    body:
-      'IMD forecast shows heavy rain in Solapur next week. Apply fungicide now before rainfall to prevent fungal outbreak.',
+    body: 'IMD forecast shows heavy rain in Solapur next week. Apply fungicide now before rainfall to prevent fungal outbreak.',
     likes: 67,
     comments: 19,
     hasImage: false,
@@ -90,8 +86,7 @@ const INITIAL_POSTS = [
     category: 'Market',
     time: '2 days ago',
     title: 'Onion prices rising — good time to harvest',
-    body:
-      'Onion prices at ₹2,800/quintal in Kolhapur APMC today. Expected to rise further. Plan your harvest accordingly.',
+    body: 'Onion prices at ₹2,800/quintal in Kolhapur APMC today. Expected to rise further. Plan your harvest accordingly.',
     likes: 203,
     comments: 67,
     hasImage: false,
@@ -104,8 +99,7 @@ const INITIAL_POSTS = [
     category: 'Tip',
     time: '6 hours ago',
     title: 'Intercropping marigold reduces pest attack naturally',
-    body:
-      'Plant marigold between tomato rows. Repels whitefly and aphids naturally. Saved 30% on pesticide costs this season.',
+    body: 'Plant marigold between tomato rows. Repels whitefly and aphids naturally. Saved 30% on pesticide costs this season.',
     likes: 112,
     comments: 38,
     hasImage: false,
@@ -141,7 +135,6 @@ export default function KnowledgeFeedScreen() {
         post.id === postId ? { ...post, likes: post.likes + 1 } : post
       )
     );
-
     Animated.sequence([
       Animated.spring(scale, { toValue: 1.22, useNativeDriver: true }),
       Animated.spring(scale, { toValue: 1, useNativeDriver: true }),
@@ -149,19 +142,11 @@ export default function KnowledgeFeedScreen() {
   }
 
   function showComments() {
-    setInfoModal({
-      visible: true,
-      title: 'Comments',
-      message: 'Comments coming soon',
-    });
+    setInfoModal({ visible: true, title: 'Comments', message: 'Comments coming soon' });
   }
 
   function showShareOptions() {
-    setInfoModal({
-      visible: true,
-      title: 'Share',
-      message: 'Share options: WhatsApp, SMS, Copy link',
-    });
+    setInfoModal({ visible: true, title: 'Share', message: 'Share options: WhatsApp, SMS, Copy link' });
   }
 
   function submitPost() {
@@ -169,7 +154,6 @@ export default function KnowledgeFeedScreen() {
     setDraftTitle('');
     setDraftBody('');
     setDraftCategory('Tip');
-
     if (Platform.OS === 'android') {
       ToastAndroid.show('Post shared successfully', ToastAndroid.SHORT);
     } else {
@@ -184,7 +168,7 @@ export default function KnowledgeFeedScreen() {
           <Text style={styles.title}>Farmer Knowledge Feed</Text>
           <Text style={styles.subtitle}>Stay updated with latest farming tips</Text>
           <View style={styles.searchBar}>
-            <Text style={styles.searchIcon}>🔎</Text>
+            <Text style={styles.searchIcon}>🔍</Text>
             <TextInput
               style={styles.searchInput}
               placeholder="Search tips, pests, crops..."
@@ -290,7 +274,7 @@ export default function KnowledgeFeedScreen() {
 }
 
 function PostCard({ post, likeScale, onLike, onComment, onShare }) {
-  const category = CATEGORY_META[post.category];
+  const category = CATEGORY_META[post.category] || { color: '#333', bg: '#eee', emoji: '📌' };
 
   return (
     <View style={styles.postCard}>
@@ -314,20 +298,22 @@ function PostCard({ post, likeScale, onLike, onComment, onShare }) {
 
       {post.hasImage && (
         <View style={styles.imagePlaceholder}>
-          <Text style={styles.imageEmoji}>🌾</Text>
+          <Text style={styles.imageEmoji}>🌿</Text>
           <Text style={styles.imageText}>Crop image preview</Text>
         </View>
       )}
 
       <View style={styles.actionRow}>
         <TouchableOpacity style={styles.actionButton} onPress={onLike} activeOpacity={0.75}>
-          <Animated.Text style={[styles.actionText, { transform: [{ scale: likeScale }] }]}>👍 {post.likes}</Animated.Text>
+          <Animated.Text style={[styles.actionText, { transform: [{ scale: likeScale }] }]}>
+            👍 {post.likes}
+          </Animated.Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={onComment} activeOpacity={0.75}>
           <Text style={styles.actionText}>💬 {post.comments}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.shareButton} onPress={onShare} activeOpacity={0.75}>
-          <Text style={styles.shareText}>🔗 Share</Text>
+          <Text style={styles.shareText}>📤 Share</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -351,13 +337,8 @@ function InfoModal({ modal, onClose }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  scrollContent: {
-    paddingBottom: 120,
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  scrollContent: { paddingBottom: 120 },
   header: {
     backgroundColor: COLORS.primary,
     paddingTop: Platform.OS === 'ios' ? 58 : 42,
@@ -366,16 +347,8 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
   },
-  title: {
-    color: COLORS.white,
-    fontSize: 28,
-    fontWeight: '900',
-  },
-  subtitle: {
-    color: '#D7F0D9',
-    fontSize: 14,
-    marginTop: 6,
-  },
+  title: { color: COLORS.white, fontSize: 28, fontWeight: '900' },
+  subtitle: { color: '#D7F0D9', fontSize: 14, marginTop: 6 },
   searchBar: {
     marginTop: 18,
     backgroundColor: COLORS.white,
@@ -385,20 +358,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 14,
   },
-  searchIcon: {
-    fontSize: 18,
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    color: '#1B5E20',
-    fontSize: 15,
-  },
-  filterRow: {
-    paddingHorizontal: 16,
-    paddingVertical: 18,
-    gap: 10,
-  },
+  searchIcon: { fontSize: 18, marginRight: 8 },
+  searchInput: { flex: 1, color: '#1B5E20', fontSize: 15 },
+  filterRow: { paddingHorizontal: 16, paddingVertical: 18, gap: 10 },
   filterChip: {
     backgroundColor: COLORS.white,
     borderRadius: 999,
@@ -407,22 +369,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#D7E8D2',
   },
-  filterChipSelected: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  filterText: {
-    color: '#315B33',
-    fontWeight: '700',
-    fontSize: 13,
-  },
-  filterTextSelected: {
-    color: COLORS.white,
-  },
-  feedSection: {
-    paddingHorizontal: 16,
-    gap: 14,
-  },
+  filterChipSelected: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  filterText: { color: '#315B33', fontWeight: '700', fontSize: 13 },
+  filterTextSelected: { color: COLORS.white },
+  feedSection: { paddingHorizontal: 16, gap: 14 },
   postCard: {
     backgroundColor: COLORS.white,
     borderRadius: 22,
@@ -435,10 +385,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 3,
   },
-  postTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+  postTopRow: { flexDirection: 'row', alignItems: 'center' },
   avatarCircle: {
     width: 46,
     height: 46,
@@ -448,45 +395,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 10,
   },
-  avatarText: {
-    fontSize: 24,
-  },
-  farmerInfo: {
-    flex: 1,
-    paddingRight: 8,
-  },
-  farmerName: {
-    color: '#163D18',
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  postMeta: {
-    color: COLORS.gray,
-    fontSize: 12,
-    marginTop: 2,
-  },
-  categoryBadge: {
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  categoryBadgeText: {
-    fontSize: 11,
-    fontWeight: '800',
-  },
-  postTitle: {
-    color: '#143915',
-    fontSize: 17,
-    fontWeight: '900',
-    marginTop: 14,
-    lineHeight: 23,
-  },
-  postBody: {
-    color: '#456346',
-    fontSize: 14,
-    lineHeight: 21,
-    marginTop: 8,
-  },
+  avatarText: { fontSize: 24 },
+  farmerInfo: { flex: 1, paddingRight: 8 },
+  farmerName: { color: '#163D18', fontSize: 15, fontWeight: '800' },
+  postMeta: { color: COLORS.gray, fontSize: 12, marginTop: 2 },
+  categoryBadge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
+  categoryBadgeText: { fontSize: 11, fontWeight: '800' },
+  postTitle: { color: '#143915', fontSize: 17, fontWeight: '900', marginTop: 14, lineHeight: 23 },
+  postBody: { color: '#456346', fontSize: 14, lineHeight: 21, marginTop: 8 },
   imagePlaceholder: {
     height: 150,
     borderRadius: 18,
@@ -497,14 +413,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#C2E3BB',
   },
-  imageEmoji: {
-    fontSize: 42,
-  },
-  imageText: {
-    color: '#4E7B4F',
-    marginTop: 6,
-    fontWeight: '700',
-  },
+  imageEmoji: { fontSize: 42 },
+  imageText: { color: '#4E7B4F', marginTop: 6, fontWeight: '700' },
   actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -513,22 +423,10 @@ const styles = StyleSheet.create({
     marginTop: 14,
     paddingTop: 12,
   },
-  actionButton: {
-    marginRight: 18,
-  },
-  actionText: {
-    color: '#315B33',
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  shareButton: {
-    marginLeft: 'auto',
-  },
-  shareText: {
-    color: COLORS.primary,
-    fontSize: 14,
-    fontWeight: '900',
-  },
+  actionButton: { marginRight: 18 },
+  actionText: { color: '#315B33', fontSize: 14, fontWeight: '800' },
+  shareButton: { marginLeft: 'auto' },
+  shareText: { color: COLORS.primary, fontSize: 14, fontWeight: '900' },
   fab: {
     position: 'absolute',
     right: 22,
@@ -545,9 +443,7 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 8,
   },
-  fabText: {
-    fontSize: 28,
-  },
+  fabText: { fontSize: 28 },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(9, 35, 10, 0.45)',
@@ -569,28 +465,15 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 20,
   },
-  modalTitle: {
-    color: '#143915',
-    fontSize: 21,
-    fontWeight: '900',
-    marginBottom: 12,
-  },
-  modalMessage: {
-    color: '#456346',
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 18,
-  },
+  modalTitle: { color: '#143915', fontSize: 21, fontWeight: '900', marginBottom: 12 },
+  modalMessage: { color: '#456346', fontSize: 15, lineHeight: 22, marginBottom: 18 },
   modalButton: {
     backgroundColor: COLORS.primary,
     borderRadius: 14,
     paddingVertical: 12,
     alignItems: 'center',
   },
-  modalButtonText: {
-    color: COLORS.white,
-    fontWeight: '900',
-  },
+  modalButtonText: { color: COLORS.white, fontWeight: '900' },
   input: {
     backgroundColor: COLORS.background,
     borderRadius: 14,
@@ -602,21 +485,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#D7E8D2',
   },
-  bodyInput: {
-    minHeight: 110,
-  },
-  selectorLabel: {
-    color: '#315B33',
-    fontSize: 13,
-    fontWeight: '900',
-    marginBottom: 8,
-  },
-  writeCategoryWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 16,
-  },
+  bodyInput: { minHeight: 110 },
+  selectorLabel: { color: '#315B33', fontSize: 13, fontWeight: '900', marginBottom: 8 },
+  writeCategoryWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
   writeChip: {
     borderRadius: 999,
     paddingHorizontal: 12,
@@ -625,35 +496,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#D7E8D2',
   },
-  writeChipSelected: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  writeChipText: {
-    color: '#315B33',
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  writeChipTextSelected: {
-    color: COLORS.white,
-  },
+  writeChipSelected: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  writeChipText: { color: '#315B33', fontSize: 12, fontWeight: '800' },
+  writeChipTextSelected: { color: COLORS.white },
   postButton: {
     backgroundColor: COLORS.primary,
     borderRadius: 16,
     paddingVertical: 14,
     alignItems: 'center',
   },
-  postButtonText: {
-    color: COLORS.white,
-    fontSize: 16,
-    fontWeight: '900',
-  },
-  cancelButton: {
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  cancelButtonText: {
-    color: COLORS.gray,
-    fontWeight: '800',
-  },
+  postButtonText: { color: COLORS.white, fontSize: 16, fontWeight: '900' },
+  cancelButton: { alignItems: 'center', paddingVertical: 12 },
+  cancelButtonText: { color: COLORS.gray, fontWeight: '800' },
 });
