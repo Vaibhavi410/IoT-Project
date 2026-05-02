@@ -1,7 +1,9 @@
 // screens/SplashScreen.js
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useRef } from "react";
-import { Animated, StyleSheet, Text, View } from "react-native";
+import { Animated, Image, StyleSheet, Text, View } from "react-native";
+
+const pestifyLogo = require("../assets/images/pestify-logo-mark.png");
 
 export default function SplashScreen({ navigation }) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -29,7 +31,7 @@ export default function SplashScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-        <Text style={styles.emoji}>🌿</Text>
+        <Image source={pestifyLogo} style={styles.logo} resizeMode="contain" />
         <Text style={styles.appName}>Pestify</Text>
         <Text style={styles.tagline}>Smart Crop & Soil Health Assistant</Text>
       </Animated.View>
@@ -40,26 +42,27 @@ export default function SplashScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#1B5E20",
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
   },
   content: {
     alignItems: "center",
   },
-  emoji: {
-    fontSize: 72,
-    marginBottom: 16,
+  logo: {
+    width: 132,
+    height: 148,
+    marginBottom: 8,
   },
   appName: {
     fontSize: 42,
     fontWeight: "bold",
-    color: "#FFFFFF",
+    color: "#1B5E20",
     letterSpacing: -1,
   },
   tagline: {
     fontSize: 15,
-    color: "rgba(255,255,255,0.7)",
+    color: "#4A7C4A",
     marginTop: 8,
     textAlign: "center",
     paddingHorizontal: 40,

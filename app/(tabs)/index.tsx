@@ -2,6 +2,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
+  Image,
   Platform,
   ScrollView,
   StyleSheet,
@@ -11,6 +12,8 @@ import {
 } from "react-native";
 import LanguageSelector from "../../components/LanguageSelector";
 import { useLanguage } from "../../context/LanguageContext";
+
+const pestifyLogo = require("../../assets/images/pestify-logo-mark.png");
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -28,7 +31,10 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View style={styles.headerRow}>
             <View style={styles.headerTextWrap}>
-              <Text style={styles.appName}>🌿 {t("app_name")}</Text>
+              <View style={styles.brandRow}>
+                <Image source={pestifyLogo} style={styles.brandLogo} resizeMode="contain" />
+                <Text style={styles.appName}>{t("app_name")}</Text>
+              </View>
               <Text style={styles.tagline}>{t("tagline")}</Text>
             </View>
             <TouchableOpacity
@@ -219,6 +225,15 @@ const styles = StyleSheet.create({
   headerTextWrap: {
     flex: 1,
     paddingRight: 12,
+  },
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  brandLogo: {
+    width: 42,
+    height: 48,
   },
   globeBtn: {
     width: 44,

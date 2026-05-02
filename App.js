@@ -91,7 +91,7 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <LanguageProvider>
-          <StatusBar style="light" />
+          <StatusBar style="dark" />
           <NavigationContainer>
             <Stack.Navigator
               initialRouteName="Splash"

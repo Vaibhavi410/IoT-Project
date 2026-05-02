@@ -5,6 +5,7 @@ import {
   Text,
   StyleSheet,
   TextInput,
+  Image,
   TouchableOpacity,
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -12,6 +13,8 @@ import {
   ScrollView,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const pestifyLogo = require("../assets/images/pestify-logo-mark.png");
 
 export default function SignInScreen({ navigation }) {
   const [activeTab, setActiveTab] = useState("phone");
@@ -95,7 +98,7 @@ export default function SignInScreen({ navigation }) {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <View style={styles.header}>
-          <Text style={styles.headerEmoji}>🌿</Text>
+          <Image source={pestifyLogo} style={styles.headerLogo} resizeMode="contain" />
           <Text style={styles.headerTitle}>Pestify</Text>
         </View>
         <View style={styles.body}>
@@ -123,7 +126,7 @@ export default function SignInScreen({ navigation }) {
     >
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.headerEmoji}>🌿</Text>
+          <Image source={pestifyLogo} style={styles.headerLogo} resizeMode="contain" />
           <Text style={styles.headerTitle}>Pestify</Text>
           <Text style={styles.headerSubtitle}>Smart Crop & Soil Health Assistant</Text>
         </View>
@@ -281,7 +284,7 @@ const styles = StyleSheet.create({
     paddingBottom: 28,
     alignItems: "center",
   },
-  headerEmoji: { fontSize: 44, marginBottom: 8 },
+  headerLogo: { width: 72, height: 82, marginBottom: 8 },
   headerTitle: { fontSize: 32, fontWeight: "bold", color: "#fff", letterSpacing: -0.5 },
   headerSubtitle: { fontSize: 13, color: "rgba(255,255,255,0.75)", marginTop: 4 },
   body: { flex: 1, padding: 24 },

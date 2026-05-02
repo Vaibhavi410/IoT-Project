@@ -3,6 +3,7 @@ import auth from "@react-native-firebase/auth";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -12,6 +13,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
+const pestifyLogo = require("../assets/images/pestify-logo-mark.png");
 
 export default function SignInScreen({ navigation }) {
   const [activeTab, setActiveTab] = useState("phone");
@@ -214,7 +217,7 @@ export default function SignInScreen({ navigation }) {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
-          <Text style={styles.headerLogo}>🌿</Text>
+          <Image source={pestifyLogo} style={styles.headerLogo} resizeMode="contain" />
           <Text style={styles.headerTitle}>Sign In to Pestify</Text>
           <Text style={styles.headerSubtitle}>Protecting farmers with AI</Text>
         </View>
@@ -411,7 +414,11 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "ios" ? 70 : 55,
     paddingBottom: 30,
   },
-  headerLogo: { fontSize: 48, marginBottom: 8 },
+  headerLogo: {
+    width: 76,
+    height: 86,
+    marginBottom: 8,
+  },
   headerTitle: {
     fontSize: 26,
     fontWeight: "bold",

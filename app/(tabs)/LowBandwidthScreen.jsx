@@ -84,7 +84,7 @@ export default function LowBandwidthScreen() {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>What's optimized</Text>
+        <Text style={styles.cardTitle}>What&apos;s optimized</Text>
         <Text style={styles.listItem}>🖼️ Images compressed to 10% quality</Text>
         <Text style={styles.listItem}>📊 Charts replaced with text summaries</Text>
         <Text style={styles.listItem}>🔄 Auto-sync disabled — manual refresh only</Text>

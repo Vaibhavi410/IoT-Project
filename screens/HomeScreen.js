@@ -26,6 +26,8 @@ import {
 import { useLanguage } from "../context/LanguageContext";
 import { formatTimestamp, getScanHistory } from "../services/historyStorage";
 
+const pestifyLogo = require("../assets/images/pestify-logo-mark.png");
+
 export default function HomeScreen({ navigation }) {
   const { t } = useLanguage();
   const [recentScans, setRecentScans] = useState([]);
@@ -95,7 +97,10 @@ export default function HomeScreen({ navigation }) {
       >
         <View style={styles.headerContent}>
           <View style={styles.headerTitleBlock}>
-            <Text style={styles.appName}>{t("app_name")}</Text>
+            <View style={styles.brandRow}>
+              <Image source={pestifyLogo} style={styles.brandLogo} resizeMode="contain" />
+              <Text style={styles.appName}>{t("app_name")}</Text>
+            </View>
             <Text style={styles.tagline}>{t("scan_tagline")}</Text>
           </View>
           <TouchableOpacity
@@ -486,6 +491,15 @@ const styles = StyleSheet.create({
   headerTitleBlock: {
     flex: 1,
     paddingRight: Spacing.sm,
+  },
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  brandLogo: {
+    width: 42,
+    height: 48,
   },
   signOutBtn: {
     minWidth: 88,
