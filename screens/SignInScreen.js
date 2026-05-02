@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import auth from "@react-native-firebase/auth";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -18,93 +18,21 @@ const pestifyLogo = require("../assets/images/pestify-logo-mark.png");
 
 export default function SignInScreen({ navigation }) {
   const [activeTab, setActiveTab] = useState("email");
-  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
-  const [countdown, setCountdown] = useState(0);
   const [name, setName] = useState("");
   const [showSignUp, setShowSignUp] = useState(false);
-  const [confirmation, setConfirmation] = useState(null);
-  const otpRefs = useRef([]);
+  
   // Note: Google auth is not automatically configured in this repo. The
   // Google button will show instructions if pressed. To enable it, add
   // appropriate OAuth client IDs and configure expo-auth-session or native
   // Google Sign-In in the project.
 
-  useEffect(() => {
-    if (countdown <= 0) return;
-    const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [countdown]);
+  
 
-  const handleSendOTP = async () => {
-    const sanitizedPhone = phone.replace(/\D/g, "");
-    if (sanitizedPhone.length !== 10) {
-      alert("Please enter a valid 10-digit phone number");
-      return;
-    }
-    setLoading(true);
-    try {
-      const confirm = await auth().signInWithPhoneNumber("+91" + sanitizedPhone);
-      setConfirmation(confirm);
-      setOtpSent(true);
-      setCountdown(30);
-    } catch (_error) {
-      alert(_error.message);
-      setOtpSent(false);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleOtpChange = (text, index) => {
-    const sanitized = String(text).replace(/\D/g, '');
-    const newOtp = [...otp];
-    // Handle paste of multiple digits
-    if (sanitized.length > 1) {
-      for (let i = 0; i < sanitized.length && index + i < 6; i++) {
-        newOtp[index + i] = sanitized[i];
-      }
-      setOtp(newOtp);
-      const next = Math.min(5, index + sanitized.length);
-      otpRefs.current[next]?.focus();
-      return;
-    }
-
-    newOtp[index] = sanitized;
-    setOtp(newOtp);
-    if (sanitized && index < 5) {
-      otpRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleVerify = async () => {
-    const enteredOtp = otp.join("");
-    if (enteredOtp.length !== 6) {
-      alert("Please enter the 6-digit OTP");
-      return;
-    }
-    setLoading(true);
-    try {
-      if (!confirmation) {
-        alert('OTP session expired. Please request a new code.');
-        setOtpSent(false);
-        setLoading(false);
-        return;
-      }
-      const result = await confirmation.confirm(enteredOtp);
-      // finalize sign-in flow immediately
-      await finalizeSignIn(result.user);
-    } catch (_error) {
-      alert("Invalid OTP. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  
 
   const handleEmailSignIn = async () => {
     if (!email.trim() || !password.trim()) {
@@ -220,89 +148,7 @@ export default function SignInScreen({ navigation }) {
 
         <View style={styles.card}>
 
-          {activeTab === "phone" && (
-            <>
-              {!otpSent ? (
-                <>
-                  <Text style={styles.label}>Phone Number</Text>
-                  <View style={styles.phoneRow}>
-                    <View style={styles.countryCode}>
-                      <Text style={styles.countryCodeText}>+91</Text>
-                    </View>
-                    <TextInput
-                      style={styles.phoneInput}
-                      placeholder="Enter phone number"
-                      placeholderTextColor="#999"
-                      keyboardType="numeric"
-                      maxLength={10}
-                      value={phone}
-                      onChangeText={setPhone}
-                    />
-                  </View>
-                  <TouchableOpacity
-                    style={[styles.primaryBtn, loading && { opacity: 0.7 }]}
-                    onPress={handleSendOTP}
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <ActivityIndicator color="#fff" />
-                    ) : (
-                      <Text style={styles.primaryBtnText}>Send OTP</Text>
-                    )}
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <>
-                  <Text style={styles.label}>
-                    Verification code sent to +91 {phone.slice(0, 5)}XXXXX
-                  </Text>
-                  <View style={styles.otpRow}>
-                    {otp.map((digit, index) => (
-                      <TextInput
-                        key={index}
-                        ref={(ref) => (otpRefs.current[index] = ref)}
-                        style={styles.otpBox}
-                        maxLength={1}
-                        keyboardType="numeric"
-                        value={digit}
-                        onChangeText={(text) => handleOtpChange(text, index)}
-                        onKeyPress={({ nativeEvent }) => {
-                          if (nativeEvent.key === 'Backspace' && !digit && index > 0) {
-                            otpRefs.current[index - 1]?.focus();
-                            const newOtp = [...otp];
-                            newOtp[index - 1] = '';
-                            setOtp(newOtp);
-                          }
-                        }}
-                        autoFocus={index === 0}
-                      />
-                    ))}
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => countdown === 0 && handleSendOTP()}
-                    disabled={countdown > 0}
-                  >
-                    <Text style={[styles.resendText, countdown > 0 && styles.resendDisabled]}>
-                      {countdown > 0 ? `Resend OTP in ${countdown}s` : 'Resend OTP'}
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.primaryBtn, loading && { opacity: 0.7 }]}
-                    onPress={handleVerify}
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <ActivityIndicator color="#fff" />
-                    ) : (
-                      <Text style={styles.primaryBtnText}>
-                        Verify & Continue
-                      </Text>
-                    )}
-                  </TouchableOpacity>
-                </>
-              )}
-            </>
-          )}
+          
 
           {activeTab === "email" && (
             <>
@@ -447,27 +293,6 @@ const styles = StyleSheet.create({
   tabText: { fontSize: 14, color: "#999", fontWeight: "600" },
   tabTextActive: { color: "#2E7D32" },
   label: { fontSize: 13, fontWeight: "600", color: "#555", marginBottom: 8 },
-  phoneRow: { flexDirection: "row", gap: 10, marginBottom: 16 },
-  countryCode: {
-    backgroundColor: "#F1F8E9",
-    borderWidth: 1.5,
-    borderColor: "#C8E6C9",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    justifyContent: "center",
-  },
-  countryCodeText: { fontSize: 15, color: "#2E7D32", fontWeight: "bold" },
-  phoneInput: {
-    flex: 1,
-    borderWidth: 1.5,
-    borderColor: "#C8E6C9",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
-    backgroundColor: "#F1F8E9",
-    color: "#1B5E20",
-  },
   input: {
     borderWidth: 1.5,
     borderColor: "#C8E6C9",
@@ -488,33 +313,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   primaryBtnText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
-  otpRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  otpBox: {
-    width: 44,
-    height: 54,
-    borderWidth: 2,
-    borderColor: "#C8E6C9",
-    borderRadius: 12,
-    textAlign: "center",
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#1B5E20",
-    backgroundColor: "#F1F8E9",
-  },
-  resendText: {
-    textAlign: "center",
-    color: "#2E7D32",
-    fontSize: 14,
-    marginBottom: 16,
-    fontWeight: "600",
-  },
-  resendDisabled: {
-    color: '#9E9E9E',
-  },
+  
   forgotText: {
     textAlign: "center",
     color: "#2E7D32",
