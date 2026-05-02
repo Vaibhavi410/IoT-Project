@@ -3,6 +3,8 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { StatusBar } from "expo-status-bar";
+import SettingsScreen from "./screens/SettingsScreen";
+
 import {
   Platform,
   StyleSheet,
@@ -115,6 +117,12 @@ export default function App() {
               <Stack.Screen
                 name="SignIn"
                 component={SignInScreen}
+                options={{ headerShown: false }}
+              />
+
+              <Stack.Screen
+                name="Settings"
+                component={SettingsScreen}
                 options={{ headerShown: false }}
               />
 

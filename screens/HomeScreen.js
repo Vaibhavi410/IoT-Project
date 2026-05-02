@@ -1,24 +1,30 @@
 // screens/HomeScreen.js
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Image,
-  Alert,
-  StatusBar,
-  Platform,
-} from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CommonActions, useFocusEffect } from "@react-navigation/native";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getScanHistory, formatTimestamp } from "../services/historyStorage";
-import { Colors, Typography, Spacing, Radius, Shadow } from "../constants/theme";
+import { LinearGradient } from "expo-linear-gradient";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Alert,
+  Image,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import LanguageSelector from "../components/LanguageSelector";
+import {
+  Colors,
+  Radius,
+  Shadow,
+  Spacing,
+  Typography,
+} from "../constants/theme";
 import { useLanguage } from "../context/LanguageContext";
+import { formatTimestamp, getScanHistory } from "../services/historyStorage";
 
 export default function HomeScreen({ navigation }) {
   const { t } = useLanguage();
@@ -26,40 +32,36 @@ export default function HomeScreen({ navigation }) {
   const [tipIndex, setTipIndex] = useState(0);
   const [langOpen, setLangOpen] = useState(false);
   const handleSignOut = () => {
-    Alert.alert(
-      "Sign Out",
-      "Are you sure you want to sign out?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Sign Out",
-          onPress: async () => {
-            await AsyncStorage.removeItem('user_name');
-            const stackNav = navigation.getParent?.()?.getParent?.();
-            const targetNav = stackNav || navigation;
-            const resetAction = CommonActions.reset({
-              index: 0,
-              routes: [{ name: 'SignIn' }],
-            });
-            if (targetNav?.dispatch) {
-              targetNav.dispatch(resetAction);
-            } else {
-              navigation.navigate('SignIn');
-            }
-          },
+    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Sign Out",
+        onPress: async () => {
+          await AsyncStorage.removeItem("user_name");
+          const stackNav = navigation.getParent?.()?.getParent?.();
+          const targetNav = stackNav || navigation;
+          const resetAction = CommonActions.reset({
+            index: 0,
+            routes: [{ name: "SignIn" }],
+          });
+          if (targetNav?.dispatch) {
+            targetNav.dispatch(resetAction);
+          } else {
+            navigation.navigate("SignIn");
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
   const tips = useMemo(
     () => [t("tip_0"), t("tip_1"), t("tip_2"), t("tip_3"), t("tip_4")],
-    [t]
+    [t],
   );
 
   useFocusEffect(
     useCallback(() => {
       loadHistory();
-    }, [])
+    }, []),
   );
 
   useEffect(() => {
@@ -81,7 +83,10 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.primaryDark} />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={Colors.primaryDark}
+      />
 
       {/* Header */}
       <LinearGradient
@@ -94,17 +99,20 @@ export default function HomeScreen({ navigation }) {
             <Text style={styles.tagline}>{t("scan_tagline")}</Text>
           </View>
           <TouchableOpacity
-              style={styles.signOutBtn}
-              onPress={handleSignOut}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              accessibilityLabel="Sign Out"
-            >
-              <Text style={styles.signOutText}>Sign Out</Text>
-            </TouchableOpacity>
-            <View style={styles.leafBadge}>
-              <Text style={styles.leafEmoji}>🌿</Text>
-            </View>
-          </View>
+            style={styles.signOutBtn}
+            onPress={handleSignOut}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityLabel="Sign Out"
+          >
+            <Text style={styles.signOutText}>Sign Out</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.leafBadge}
+            onPress={() => navigation.navigate("Settings")}
+          >
+            <Text style={styles.leafEmoji}>⚙️</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Tip carousel */}
         <View style={styles.tipBox}>
@@ -131,8 +139,10 @@ export default function HomeScreen({ navigation }) {
               <Text style={{ fontSize: 24 }}>📷</Text>
             </View>
             <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>📷 Pest Identification</Text>
-              <Text style={styles.treatmentBtnSub}>Take photo or upload to identify pests</Text>
+              <Text style={styles.treatmentBtnTitle}>Pest Identification</Text>
+              <Text style={styles.treatmentBtnSub}>
+                Take photo or upload to identify pests
+              </Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
@@ -146,8 +156,10 @@ export default function HomeScreen({ navigation }) {
               <Text style={{ fontSize: 24 }}>🪱</Text>
             </View>
             <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>🪱 Soil Analysis</Text>
-              <Text style={styles.treatmentBtnSub}>Manual entry or IoT sensor readings</Text>
+              <Text style={styles.treatmentBtnTitle}>Soil Analysis</Text>
+              <Text style={styles.treatmentBtnSub}>
+                Manual entry or IoT sensor readings
+              </Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
@@ -177,7 +189,7 @@ export default function HomeScreen({ navigation }) {
               <Text style={{ fontSize: 24 }}>💊</Text>
             </View>
             <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>💊 Treatment Plan</Text>
+              <Text style={styles.treatmentBtnTitle}>Treatment Plan</Text>
               <Text style={styles.treatmentBtnSub}>{t("treatment_sub")}</Text>
             </View>
             <Text style={styles.chevron}>›</Text>
@@ -192,8 +204,10 @@ export default function HomeScreen({ navigation }) {
               <Text style={{ fontSize: 24 }}>🌾</Text>
             </View>
             <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>🌾 Crop Protocol</Text>
-              <Text style={styles.treatmentBtnSub}>Stages, risks, and prevention schedule</Text>
+              <Text style={styles.treatmentBtnTitle}>Crop Protocol</Text>
+              <Text style={styles.treatmentBtnSub}>
+                Stages, risks, and prevention schedule
+              </Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
@@ -212,8 +226,10 @@ export default function HomeScreen({ navigation }) {
               <Text style={{ fontSize: 24 }}>📅</Text>
             </View>
             <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>📅 Pest Timeline</Text>
-              <Text style={styles.treatmentBtnSub}>Track pest activity on your farm over time</Text>
+              <Text style={styles.treatmentBtnTitle}>Pest Timeline</Text>
+              <Text style={styles.treatmentBtnSub}>
+                Track pest activity on your farm over time
+              </Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
@@ -227,8 +243,10 @@ export default function HomeScreen({ navigation }) {
               <Text style={{ fontSize: 24 }}>🌦️</Text>
             </View>
             <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>🌦️ Weather Advisory</Text>
-              <Text style={styles.treatmentBtnSub}>Pest risk forecast and spraying guidance</Text>
+              <Text style={styles.treatmentBtnTitle}>Weather Advisory</Text>
+              <Text style={styles.treatmentBtnSub}>
+                Pest risk forecast and spraying guidance
+              </Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
@@ -247,23 +265,10 @@ export default function HomeScreen({ navigation }) {
               <Text style={{ fontSize: 24 }}>📄</Text>
             </View>
             <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>📄 PDF Reports</Text>
-              <Text style={styles.treatmentBtnSub}>Auto-generate pest analysis PDF report</Text>
-            </View>
-            <Text style={styles.chevron}>›</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.treatmentBtn, { marginTop: Spacing.md }]}
-            onPress={() => setLangOpen(true)}
-            activeOpacity={0.8}
-          >
-            <View style={styles.treatmentIconBox}>
-              <Text style={{ fontSize: 24 }}>🌐</Text>
-            </View>
-            <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>🌐 Language Support</Text>
-              <Text style={styles.treatmentBtnSub}>Switch app language</Text>
+              <Text style={styles.treatmentBtnTitle}>PDF Reports</Text>
+              <Text style={styles.treatmentBtnSub}>
+                Auto-generate pest analysis PDF report
+              </Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
@@ -273,12 +278,19 @@ export default function HomeScreen({ navigation }) {
             onPress={() => navigation.navigate("VoiceAssistant")}
             activeOpacity={0.8}
           >
-            <View style={[styles.treatmentIconBox, { backgroundColor: Colors.successBg }]}>
+            <View
+              style={[
+                styles.treatmentIconBox,
+                { backgroundColor: Colors.successBg },
+              ]}
+            >
               <Text style={{ fontSize: 24 }}>🎤</Text>
             </View>
             <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>🎤 Voice Assistant</Text>
-              <Text style={styles.treatmentBtnSub}>{t("voice_assistant_sub")}</Text>
+              <Text style={styles.treatmentBtnTitle}>Voice Assistant</Text>
+              <Text style={styles.treatmentBtnSub}>
+                {t("voice_assistant_sub")}
+              </Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
@@ -287,12 +299,21 @@ export default function HomeScreen({ navigation }) {
             onPress={() => navigation.navigate("LowBandwidth")}
             activeOpacity={0.8}
           >
-            <View style={[styles.treatmentIconBox, { backgroundColor: Colors.primaryMuted }]}>
+            <View
+              style={[
+                styles.treatmentIconBox,
+                { backgroundColor: Colors.primaryMuted },
+              ]}
+            >
               <Text style={{ fontSize: 24 }}>{"\uD83D\uDCF6"}</Text>
             </View>
             <View style={styles.treatmentBtnInfo}>
-              <Text style={styles.treatmentBtnTitle}>{"\uD83D\uDCF6"} Low Bandwidth Mode</Text>
-              <Text style={styles.treatmentBtnSub}>Optimize app usage for 2G and slow networks</Text>
+              <Text style={styles.treatmentBtnTitle}>
+                {"\uD83D\uDCF6"} Low Bandwidth Mode
+              </Text>
+              <Text style={styles.treatmentBtnSub}>
+                Optimize app usage for 2G and slow networks
+              </Text>
             </View>
             <Text style={styles.chevron}>{">"}</Text>
           </TouchableOpacity>
@@ -345,7 +366,12 @@ export default function HomeScreen({ navigation }) {
 /** Map API severity strings to translated labels. */
 function severityLabel(sev, t) {
   if (!sev) return sev;
-  const map = { Low: "low", Moderate: "moderate", High: "high", Critical: "critical" };
+  const map = {
+    Low: "low",
+    Moderate: "moderate",
+    High: "high",
+    Critical: "critical",
+  };
   const key = map[sev];
   return key ? t(key) : sev;
 }
@@ -365,7 +391,11 @@ function RecentScanCard({ scan, onPress, t }) {
   const isIdentified = result?.identified;
 
   return (
-    <TouchableOpacity style={styles.recentCard} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity
+      style={styles.recentCard}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
       {imageUri ? (
         <Image source={{ uri: imageUri }} style={styles.recentImage} />
       ) : (
@@ -390,7 +420,12 @@ function RecentScanCard({ scan, onPress, t }) {
                 { backgroundColor: getSeverityBg(result.severity) },
               ]}
             >
-              <Text style={[styles.severityText, { color: getSeverityColor(result.severity) }]}>
+              <Text
+                style={[
+                  styles.severityText,
+                  { color: getSeverityColor(result.severity) },
+                ]}
+              >
                 {severityLabel(result.severity, t)}
               </Text>
             </View>
@@ -725,7 +760,3 @@ const styles = StyleSheet.create({
     fontSize: 28,
   },
 });
-
-
-
-
