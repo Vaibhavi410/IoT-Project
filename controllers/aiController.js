@@ -110,3 +110,70 @@ exports.analyzePest = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// POST /api/ai/text - generic text assistant endpoint
+exports.textPrompt = async (req, res) => {
+  try {
+    const { prompt = '' } = req.body;
+
+    if (!prompt || String(prompt).trim().length === 0) {
+      return res.status(400).json({ success: false, message: 'prompt is required' });
+    }
+
+    if (!process.env.GEMINI_API_KEY || !process.env.GEMINI_API_URL) {
+      return res.status(501).json({
+        success: false,
+        message:
+          'GEMINI_API_KEY or GEMINI_API_URL not configured on the server. Add GEMINI_API_KEY and GEMINI_API_URL to environment variables.',
+      });
+    }
+
+    const system = `You are CropGuard Assistant, a helpful agricultural assistant. Answer concisely in the user's language and avoid extra commentary.`;
+    const fullPrompt = `${system}\nUser: ${prompt}`;
+
+    const payload = {
+      model: process.env.GEMINI_MODEL || 'gemini-1.0',
+      prompt: fullPrompt,
+      max_output_tokens: 800,
+    };
+
+    const response = await fetch(process.env.GEMINI_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.GEMINI_API_KEY}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text().catch(() => 'Unknown error');
+      return res.status(response.status).json({ success: false, message: errText });
+    }
+
+    const data = await response.json().catch(() => null);
+
+    let rawText = null;
+    if (data) {
+      if (data.output && Array.isArray(data.output) && data.output[0]?.content) {
+        const textBlock = data.output[0].content.find((c) => c.type === 'text');
+        rawText = textBlock?.text || null;
+      }
+      rawText = rawText || data.candidates?.[0]?.content?.[0]?.text || data.result || data.text || null;
+    }
+
+    if (!rawText) {
+      try {
+        const text = await response.text();
+        rawText = text;
+      } catch (e) {
+        rawText = null;
+      }
+    }
+
+    return res.status(200).json({ success: true, text: rawText || '' });
+  } catch (error) {
+    console.error('AI text error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
