@@ -1,5 +1,5 @@
-// screens/SignInScreen.js
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import auth from "@react-native-firebase/auth";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -14,7 +14,7 @@ import {
 } from "react-native";
 
 export default function SignInScreen({ navigation }) {
-  const [activeTab, setActiveTab] = useState("phone"); // phone | email
+  const [activeTab, setActiveTab] = useState("phone");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,51 +24,122 @@ export default function SignInScreen({ navigation }) {
   const [countdown, setCountdown] = useState(0);
   const [nameStep, setNameStep] = useState(false);
   const [name, setName] = useState("");
+  const [confirmation, setConfirmation] = useState(null);
+  const [firebaseIdToken, setFirebaseIdToken] = useState(null);
   const otpRefs = useRef([]);
 
   useEffect(() => {
     if (countdown <= 0) return;
-    const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+    const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  const handleSendOTP = () => {
-    if (phone.length !== 10) {
+  const handleSendOTP = async () => {
+    const sanitizedPhone = phone.replace(/\D/g, "");
+    if (sanitizedPhone.length !== 10) {
       alert("Please enter a valid 10-digit phone number");
       return;
     }
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const confirm = await auth().signInWithPhoneNumber("+91" + sanitizedPhone);
+      setConfirmation(confirm);
       setOtpSent(true);
       setCountdown(30);
-    }, 1500);
+    } catch (_error) {
+      alert(_error.message);
+      setOtpSent(false);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleOtpChange = (text, index) => {
+    const sanitized = String(text).replace(/\D/g, '');
     const newOtp = [...otp];
-    newOtp[index] = text;
+    // Handle paste of multiple digits
+    if (sanitized.length > 1) {
+      for (let i = 0; i < sanitized.length && index + i < 6; i++) {
+        newOtp[index + i] = sanitized[i];
+      }
+      setOtp(newOtp);
+      const next = Math.min(5, index + sanitized.length);
+      otpRefs.current[next]?.focus();
+      return;
+    }
+
+    newOtp[index] = sanitized;
     setOtp(newOtp);
-    if (text && index < 5) {
+    if (sanitized && index < 5) {
       otpRefs.current[index + 1]?.focus();
     }
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     const enteredOtp = otp.join("");
     if (enteredOtp.length !== 6) {
       alert("Please enter the 6-digit OTP");
       return;
     }
-    setNameStep(true);
+    setLoading(true);
+    try {
+      if (!confirmation) {
+        alert('OTP session expired. Please request a new code.');
+        setOtpSent(false);
+        setLoading(false);
+        return;
+      }
+      const result = await confirmation.confirm(enteredOtp);
+      // obtain Firebase ID token to exchange with backend later
+      try {
+        const idToken = await result.user.getIdToken();
+        setFirebaseIdToken(idToken);
+      } catch (e) {
+        console.warn('Failed to read Firebase ID token', e);
+      }
+      setNameStep(true);
+    } catch (_error) {
+      alert("Invalid OTP. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleEmailSignIn = () => {
+  const handleEmailSignIn = async () => {
     if (!email.trim() || !password.trim()) {
       alert("Please enter email and password");
       return;
     }
-    setNameStep(true);
+    setLoading(true);
+    try {
+      const userCredential = await auth().signInWithEmailAndPassword(email, password);
+      try {
+        const idToken = await userCredential.user.getIdToken();
+        setFirebaseIdToken(idToken);
+      } catch (e) {
+        console.warn('Failed to get Firebase ID token for email sign-in', e);
+      }
+      setNameStep(true);
+    } catch (_error) {
+      if (_error.code === "auth/user-not-found") {
+        try {
+          const createCred = await auth().createUserWithEmailAndPassword(email, password);
+          try {
+            const idToken = await createCred.user.getIdToken();
+            setFirebaseIdToken(idToken);
+          } catch (e) {
+            console.warn('Failed to get Firebase ID token after account creation', e);
+          }
+          setNameStep(true);
+          } catch (createError) {
+            alert(createError.message);
+          }
+      } else {
+        alert(_error.message);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogleSignIn = () => {
@@ -80,11 +151,31 @@ export default function SignInScreen({ navigation }) {
       alert("Please enter your name");
       return;
     }
+    const BACKEND_URL = 'https://iot-project-a0ho.onrender.com';
+    // If we have a Firebase ID token, exchange it with backend to get app JWT
+    if (firebaseIdToken) {
+      setLoading(true);
+      try {
+        const resp = await fetch(`${BACKEND_URL}/api/auth/firebase`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken: firebaseIdToken, name: name.trim() }),
+        });
+        const data = await resp.json().catch(() => null);
+        if (data?.token) {
+          await AsyncStorage.setItem('pestify_token', data.token);
+        }
+      } catch (e) {
+        console.warn('Backend auth exchange failed', e);
+      } finally {
+        setLoading(false);
+      }
+    }
+
     await AsyncStorage.setItem("user_name", name.trim());
     navigation.replace("Main");
   };
 
-  // Name step
   if (nameStep) {
     return (
       <KeyboardAvoidingView
@@ -93,7 +184,7 @@ export default function SignInScreen({ navigation }) {
       >
         <View style={styles.nameContainer}>
           <Text style={styles.nameEmoji}>👋</Text>
-          <Text style={styles.nameTitle}>What's your name?</Text>
+          <Text style={styles.nameTitle}>What is your name?</Text>
           <Text style={styles.nameSubtitle}>
             So we can personalize your experience
           </Text>
@@ -122,16 +213,13 @@ export default function SignInScreen({ navigation }) {
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerLogo}>🌿</Text>
           <Text style={styles.headerTitle}>Sign In to Pestify</Text>
           <Text style={styles.headerSubtitle}>Protecting farmers with AI</Text>
         </View>
 
-        {/* Card */}
         <View style={styles.card}>
-          {/* Tab switcher */}
           <View style={styles.tabRow}>
             <TouchableOpacity
               style={[styles.tab, activeTab === "phone" && styles.tabActive]}
@@ -164,7 +252,6 @@ export default function SignInScreen({ navigation }) {
             </TouchableOpacity>
           </View>
 
-          {/* Phone tab */}
           {activeTab === "phone" && (
             <>
               {!otpSent ? (
@@ -211,31 +298,44 @@ export default function SignInScreen({ navigation }) {
                         keyboardType="numeric"
                         value={digit}
                         onChangeText={(text) => handleOtpChange(text, index)}
+                        onKeyPress={({ nativeEvent }) => {
+                          if (nativeEvent.key === 'Backspace' && !digit && index > 0) {
+                            otpRefs.current[index - 1]?.focus();
+                            const newOtp = [...otp];
+                            newOtp[index - 1] = '';
+                            setOtp(newOtp);
+                          }
+                        }}
+                        autoFocus={index === 0}
                       />
                     ))}
                   </View>
                   <TouchableOpacity
-                    onPress={() => countdown === 0 && setCountdown(30)}
+                    onPress={() => countdown === 0 && handleSendOTP()}
                     disabled={countdown > 0}
                   >
-                    <Text style={styles.resendText}>
-                      {countdown > 0
-                        ? `Resend OTP in ${countdown}s`
-                        : "Resend OTP"}
+                    <Text style={[styles.resendText, countdown > 0 && styles.resendDisabled]}>
+                      {countdown > 0 ? `Resend OTP in ${countdown}s` : 'Resend OTP'}
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={styles.primaryBtn}
+                    style={[styles.primaryBtn, loading && { opacity: 0.7 }]}
                     onPress={handleVerify}
+                    disabled={loading}
                   >
-                    <Text style={styles.primaryBtnText}>Verify & Continue</Text>
+                    {loading ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={styles.primaryBtnText}>
+                        Verify & Continue
+                      </Text>
+                    )}
                   </TouchableOpacity>
                 </>
               )}
             </>
           )}
 
-          {/* Email tab */}
           {activeTab === "email" && (
             <>
               <Text style={styles.label}>Email</Text>
@@ -258,10 +358,15 @@ export default function SignInScreen({ navigation }) {
                 onChangeText={setPassword}
               />
               <TouchableOpacity
-                style={styles.primaryBtn}
+                style={[styles.primaryBtn, loading && { opacity: 0.7 }]}
                 onPress={handleEmailSignIn}
+                disabled={loading}
               >
-                <Text style={styles.primaryBtnText}>Sign In</Text>
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.primaryBtnText}>Sign In</Text>
+                )}
               </TouchableOpacity>
               <TouchableOpacity>
                 <Text style={styles.forgotText}>Forgot password?</Text>
@@ -269,14 +374,12 @@ export default function SignInScreen({ navigation }) {
             </>
           )}
 
-          {/* Divider */}
           <View style={styles.dividerRow}>
             <View style={styles.dividerLine} />
             <Text style={styles.dividerText}>OR</Text>
             <View style={styles.dividerLine} />
           </View>
 
-          {/* Google Sign In */}
           <TouchableOpacity
             style={styles.googleBtn}
             onPress={handleGoogleSignIn}
@@ -285,7 +388,6 @@ export default function SignInScreen({ navigation }) {
             <Text style={styles.googleBtnText}>Continue with Google</Text>
           </TouchableOpacity>
 
-          {/* Create Account */}
           <TouchableOpacity
             style={styles.createBtn}
             onPress={handleGoogleSignIn}
@@ -303,29 +405,20 @@ export default function SignInScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F1F8E9",
-  },
+  container: { flex: 1, backgroundColor: "#F1F8E9" },
   header: {
     alignItems: "center",
     paddingTop: Platform.OS === "ios" ? 70 : 55,
     paddingBottom: 30,
   },
-  headerLogo: {
-    fontSize: 48,
-    marginBottom: 8,
-  },
+  headerLogo: { fontSize: 48, marginBottom: 8 },
   headerTitle: {
     fontSize: 26,
     fontWeight: "bold",
     color: "#1B5E20",
     marginBottom: 4,
   },
-  headerSubtitle: {
-    fontSize: 14,
-    color: "#4A7C4A",
-  },
+  headerSubtitle: { fontSize: 14, color: "#4A7C4A" },
   card: {
     backgroundColor: "#fff",
     marginHorizontal: 20,
@@ -345,35 +438,12 @@ const styles = StyleSheet.create({
     padding: 4,
     marginBottom: 20,
   },
-  tab: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: "center",
-    borderRadius: 10,
-  },
-  tabActive: {
-    backgroundColor: "#fff",
-    elevation: 2,
-  },
-  tabText: {
-    fontSize: 14,
-    color: "#999",
-    fontWeight: "600",
-  },
-  tabTextActive: {
-    color: "#2E7D32",
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#555",
-    marginBottom: 8,
-  },
-  phoneRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 16,
-  },
+  tab: { flex: 1, paddingVertical: 10, alignItems: "center", borderRadius: 10 },
+  tabActive: { backgroundColor: "#fff", elevation: 2 },
+  tabText: { fontSize: 14, color: "#999", fontWeight: "600" },
+  tabTextActive: { color: "#2E7D32" },
+  label: { fontSize: 13, fontWeight: "600", color: "#555", marginBottom: 8 },
+  phoneRow: { flexDirection: "row", gap: 10, marginBottom: 16 },
   countryCode: {
     backgroundColor: "#F1F8E9",
     borderWidth: 1.5,
@@ -382,11 +452,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     justifyContent: "center",
   },
-  countryCodeText: {
-    fontSize: 15,
-    color: "#2E7D32",
-    fontWeight: "bold",
-  },
+  countryCodeText: { fontSize: 15, color: "#2E7D32", fontWeight: "bold" },
   phoneInput: {
     flex: 1,
     borderWidth: 1.5,
@@ -417,11 +483,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 8,
   },
-  primaryBtnText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
+  primaryBtnText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
   otpRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -446,6 +508,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     fontWeight: "600",
   },
+  resendDisabled: {
+    color: '#9E9E9E',
+  },
   forgotText: {
     textAlign: "center",
     color: "#2E7D32",
@@ -458,11 +523,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginVertical: 20,
   },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#E0E0E0",
-  },
+  dividerLine: { flex: 1, height: 1, backgroundColor: "#E0E0E0" },
   dividerText: {
     marginHorizontal: 12,
     color: "#999",
@@ -480,16 +541,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     gap: 10,
   },
-  googleG: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#DB4437",
-  },
-  googleBtnText: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#333",
-  },
+  googleG: { fontSize: 18, fontWeight: "bold", color: "#DB4437" },
+  googleBtnText: { fontSize: 15, fontWeight: "600", color: "#333" },
   createBtn: {
     borderWidth: 1.5,
     borderColor: "#2E7D32",
@@ -498,11 +551,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
-  createBtnText: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#2E7D32",
-  },
+  createBtnText: { fontSize: 15, fontWeight: "600", color: "#2E7D32" },
   terms: {
     textAlign: "center",
     color: "#999",
@@ -516,10 +565,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 30,
   },
-  nameEmoji: {
-    fontSize: 60,
-    marginBottom: 20,
-  },
+  nameEmoji: { fontSize: 60, marginBottom: 20 },
   nameTitle: {
     fontSize: 26,
     fontWeight: "bold",
@@ -552,9 +598,5 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
   },
-  startBtnText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
+  startBtnText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
 });
