@@ -4,3 +4,8 @@ node_modules/
 .DS_Store
 *.log
 npm-debug.log*
+## Ignore Firebase service account files
+serviceAccountKey.json
+firebase-adminsdk-*.json
+*.gserviceaccount.json
+*.key.json

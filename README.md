@@ -49,9 +49,23 @@ MONGODB_URI=mongodb+srv://your_username:your_password@cluster.mongodb.net/pestif
 JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
 PORT=5000
 NODE_ENV=development
+FIREBASE_PROJECT_ID=your-firebase-project-id
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-firebase-project-id.iam.gserviceaccount.com
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYOUR_PRIVATE_KEY\n-----END PRIVATE KEY-----\n"
 ```
 
 ⚠️ **Important**: Replace `your_username` and `your_password` with your MongoDB credentials.
+
+### 4. Firebase Admin Setup
+
+To trust Firebase phone OTP and Firebase email sign-ins on your backend:
+
+1. Open **Firebase Console -> Project Settings -> Service accounts**
+2. Click **Generate new private key**
+3. Copy the service account values into your local `.env` and your Render environment
+4. Keep `FIREBASE_PRIVATE_KEY` wrapped in quotes and preserve the `\n` line breaks
+
+Firebase Auth handles the OTP or email-link step on the client. Your mobile app then sends the Firebase ID token to this backend, and this backend verifies it before creating or logging in the MongoDB user.
 
 ## Running the Server
 
@@ -80,8 +94,17 @@ curl http://localhost:5000/api/health
 
 - **POST** `/api/auth/register` - Register a new user
 - **POST** `/api/auth/login` - Login user
+- **POST** `/api/auth/firebase` - Exchange Firebase ID token for Pestify JWT
 - **GET** `/api/auth/me` - Get current user (requires token)
 - **PUT** `/api/auth/update` - Update user profile (requires token)
+
+### Firebase Auth Flow
+
+1. User signs in on the app using Firebase Phone Auth or Firebase Email Auth
+2. App gets the Firebase ID token from the signed-in user
+3. App calls `POST /api/auth/firebase` with that token
+4. Backend verifies the token with Firebase Admin SDK
+5. Backend creates or updates the MongoDB user and returns the normal Pestify JWT
 
 ### Pest Analysis
 
@@ -122,6 +145,16 @@ curl -X POST http://localhost:5000/api/auth/login \
   -d '{
     "email": "john@example.com",
     "password": "password123"
+  }'
+```
+
+### Firebase Login
+
+```bash
+curl -X POST http://localhost:5000/api/auth/firebase \
+  -H "Content-Type: application/json" \
+  -d '{
+    "idToken": "FIREBASE_ID_TOKEN_FROM_CLIENT"
   }'
 ```
 
@@ -180,6 +213,23 @@ For testing on physical devices or emulators, use your machine's IP address (not
 
 ## Deployment
 
+### Render Environment Variables
+
+Set these on your Render backend service:
+
+- `MONGODB_URI`
+- `JWT_SECRET`
+- `NODE_ENV=production`
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_CLIENT_EMAIL`
+- `FIREBASE_PRIVATE_KEY`
+
+Example private key format:
+
+```env
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nABC123...\n-----END PRIVATE KEY-----\n"
+```
+
 ### Heroku Deployment
 
 1. Create Heroku account at https://www.heroku.com
@@ -212,8 +262,12 @@ For testing on physical devices or emulators, use your machine's IP address (not
 ```javascript
 {
   name: String,
-  email: String (unique),
-  password: String (hashed),
+  email: String (unique, optional for phone-only Firebase users),
+  password: String (hashed, optional for Firebase users),
+  firebaseUid: String (unique),
+  authProviders: [String],
+  emailVerified: Boolean,
+  phoneVerified: Boolean,
   farmLocation: String,
   farmArea: Number,
   phoneNumber: String,
@@ -302,6 +356,7 @@ The backend is configured with CORS enabled. If you get CORS errors:
 ## Security Best Practices
 
 - Never commit `.env` file to Git
+- Never commit your Firebase service account JSON or private key to Git
 - Use strong JWT_SECRET in production
 - Validate all user inputs
 - Sanitize database queries
