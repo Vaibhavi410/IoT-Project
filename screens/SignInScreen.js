@@ -21,12 +21,14 @@ export default function SignInScreen({ navigation }) {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [nameStep, setNameStep] = useState(false);
   const [name, setName] = useState("");
+  const [showSignUp, setShowSignUp] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
   const [firebaseIdToken, setFirebaseIdToken] = useState(null);
   const otpRefs = useRef([]);
@@ -124,22 +126,44 @@ export default function SignInScreen({ navigation }) {
       }
       setNameStep(true);
     } catch (_error) {
-      if (_error.code === "auth/user-not-found") {
-        try {
-          const createCred = await auth().createUserWithEmailAndPassword(email, password);
-          try {
-            const idToken = await createCred.user.getIdToken();
-            setFirebaseIdToken(idToken);
-          } catch (e) {
-            console.warn('Failed to get Firebase ID token after account creation', e);
-          }
-          setNameStep(true);
-          } catch (createError) {
-            alert(createError.message);
-          }
-      } else {
-        alert(_error.message);
+      // Sign-in failed; surface message
+      alert(_error.message || 'Sign in failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEmailSignUp = async () => {
+    if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
+      alert('Please fill all fields');
+      return;
+    }
+    if (password !== confirmPassword) {
+      alert('Passwords do not match');
+      return;
+    }
+    setLoading(true);
+    try {
+      const cred = await auth().createUserWithEmailAndPassword(email, password);
+      // Optionally set display name if provided (we'll still show nameStep to confirm)
+      try {
+        if (name && cred.user && cred.user.updateProfile) {
+          await cred.user.updateProfile({ displayName: name.trim() });
+        }
+      } catch (e) {
+        console.warn('Failed to set displayName', e);
       }
+      try {
+        const idToken = await cred.user.getIdToken();
+        setFirebaseIdToken(idToken);
+      } catch (e) {
+        console.warn('Failed to get Firebase ID token after sign-up', e);
+      }
+      // proceed to name step to finish onboarding and exchange token with backend
+      setShowSignUp(false);
+      setNameStep(true);
+    } catch (e) {
+      alert(e.message || 'Sign up failed');
     } finally {
       setLoading(false);
     }
@@ -341,7 +365,16 @@ export default function SignInScreen({ navigation }) {
 
           {activeTab === "email" && (
             <>
-              <Text style={styles.label}>Email</Text>
+              <Text style={styles.label}>{showSignUp ? 'Name (optional)' : 'Email'}</Text>
+              {showSignUp ? (
+                <TextInput
+                  style={styles.input}
+                  placeholder="Full name (optional)"
+                  placeholderTextColor="#999"
+                  value={name}
+                  onChangeText={setName}
+                />
+              ) : null}
               <TextInput
                 style={styles.input}
                 placeholder="Enter email"
@@ -360,20 +393,39 @@ export default function SignInScreen({ navigation }) {
                 value={password}
                 onChangeText={setPassword}
               />
+              {showSignUp && (
+                <>
+                  <Text style={styles.label}>Confirm Password</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Confirm password"
+                    placeholderTextColor="#999"
+                    secureTextEntry
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                  />
+                </>
+              )}
               <TouchableOpacity
                 style={[styles.primaryBtn, loading && { opacity: 0.7 }]}
-                onPress={handleEmailSignIn}
+                onPress={showSignUp ? handleEmailSignUp : handleEmailSignIn}
                 disabled={loading}
               >
                 {loading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.primaryBtnText}>Sign In</Text>
+                  <Text style={styles.primaryBtnText}>{showSignUp ? 'Create Account' : 'Sign In'}</Text>
                 )}
               </TouchableOpacity>
-              <TouchableOpacity>
-                <Text style={styles.forgotText}>Forgot password?</Text>
-              </TouchableOpacity>
+              {!showSignUp ? (
+                <TouchableOpacity>
+                  <Text style={styles.forgotText}>Forgot password?</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity onPress={() => setShowSignUp(false)}>
+                  <Text style={[styles.forgotText, { color: '#2E7D32' }]}>Back to sign in</Text>
+                </TouchableOpacity>
+              )}
             </>
           )}
 
@@ -393,7 +445,11 @@ export default function SignInScreen({ navigation }) {
 
           <TouchableOpacity
             style={styles.createBtn}
-            onPress={handleGoogleSignIn}
+            onPress={() => {
+              // Open sign-up mode and show email tab by default
+              setShowSignUp(true);
+              setActiveTab('email');
+            }}
           >
             <Text style={styles.createBtnText}>Create Account</Text>
           </TouchableOpacity>
