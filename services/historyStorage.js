@@ -4,6 +4,19 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const HISTORY_KEY = "pestify_scan_history";
 const MAX_HISTORY = 50;
 
+const API_URL =
+  (typeof process !== 'undefined' && process.env && process.env.EXPO_PUBLIC_API_URL) ||
+  'https://iot-project-a0ho.onrender.com';
+
+async function getAuthToken() {
+  try {
+    const t = await AsyncStorage.getItem('pestify_token');
+    return t;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Save a scan result to history
  */
@@ -21,6 +34,83 @@ export async function saveScanResult(imageUri, result) {
     return newEntry.id;
   } catch (error) {
     console.error("Failed to save scan history:", error);
+  }
+}
+
+/**
+ * Try to save a scan result to the backend (requires `pestify_token` in AsyncStorage).
+ * This posts to POST /api/pest/analyze and returns the created item or null on failure.
+ */
+export async function saveScanResultRemote(imageUri, result) {
+  try {
+    const token = await getAuthToken();
+    if (!token) return null;
+
+    const confidence = (() => {
+      if (typeof result?.confidence === 'number') return result.confidence;
+      if (typeof result?.confidence === 'string') return parseInt(result.confidence.replace(/[^0-9]/g, ''), 10) || null;
+      return null;
+    })();
+
+    const severity = (() => {
+      const s = String(result?.severity || '').toLowerCase();
+      if (s.includes('critical')) return 'critical';
+      if (s.includes('high')) return 'high';
+      if (s.includes('moderate') || s.includes('medium')) return 'medium';
+      if (s.includes('low')) return 'low';
+      return 'medium';
+    })();
+
+    const payload = {
+      pestName: result?.pestName || result?.name || 'Unknown',
+      confidence: confidence,
+      severity,
+      cropType: (result?.affectedCrops && result.affectedCrops[0]) || result?.crop || '',
+      imageUrl: imageUri,
+      recommendations: result?.organicTreatments?.map((t) => t.name).concat(result?.chemicalTreatments?.map((t) => t.name) || []) || [],
+      notes: result?.description || '',
+    };
+
+    const resp = await fetch(`${API_URL}/api/pest/analyze`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!resp.ok) {
+      const txt = await resp.text().catch(() => null);
+      console.warn('Remote save failed', resp.status, txt);
+      return null;
+    }
+
+    const body = await resp.json().catch(() => null);
+    return body?.data || null;
+  } catch (error) {
+    console.warn('saveScanResultRemote error', error);
+    return null;
+  }
+}
+
+/**
+ * Fetch user's scan history from backend (requires auth). Falls back to [] on error.
+ */
+export async function getScanHistoryRemote() {
+  try {
+    const token = await getAuthToken();
+    if (!token) return [];
+    const resp = await fetch(`${API_URL}/api/pest/history`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!resp.ok) return [];
+    const body = await resp.json().catch(() => null);
+    return body?.data || [];
+  } catch (error) {
+    console.warn('getScanHistoryRemote error', error);
+    return [];
   }
 }
 

@@ -22,7 +22,7 @@ import { DEFAULT_LANG, LANGUAGE_CATALOG, TRANSLATIONS } from '../../constants/tr
 import { useLanguage } from '../../context/LanguageContext';
 import LanguageSelector from '../../components/LanguageSelector';
 import VoiceWaveform from '../../components/VoiceWaveform';
-import { getDummyVoiceResponse, getSpeechLocale } from '../../services/voiceAssistantLogic';
+import { getDummyVoiceResponse, getSpeechLocale, queryVoiceAssistant } from '../../services/voiceAssistantLogic';
 
 /**
  * Voice-first assistant (Pestify)
@@ -231,10 +231,18 @@ export default function VoiceAssistantScreen() {
       setDraftText(q);
       setPhase('processing');
       await new Promise((r) => setTimeout(r, 900));
-      const ans = getDummyVoiceResponse(q, voiceLang, tv);
-      setResponseText(ans);
-      setRecent((prev) => [{ q, a: ans }, ...prev].slice(0, 3));
-      setPhase('response');
+      try {
+        const ans = await queryVoiceAssistant(q, voiceLang);
+        if (!ans) throw new Error('Empty assistant response');
+        setResponseText(ans);
+        setRecent((prev) => [{ q, a: ans }, ...prev].slice(0, 3));
+        setPhase('response');
+      } catch (e) {
+        const ans = getDummyVoiceResponse(q, voiceLang, tv);
+        setResponseText(ans);
+        setRecent((prev) => [{ q, a: ans }, ...prev].slice(0, 3));
+        setPhase('response');
+      }
     },
     [draftText, stopRecording, tv, voiceLang]
   );

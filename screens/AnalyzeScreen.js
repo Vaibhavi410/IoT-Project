@@ -16,7 +16,7 @@ import {
 import * as FileSystem from "expo-file-system";
 import { LinearGradient } from "expo-linear-gradient";
 import { analyzePestImage } from "../services/pestAnalysis";
-import { saveScanResult } from "../services/historyStorage";
+import { saveScanResult, saveScanResultRemote } from "../services/historyStorage";
 import { Colors, Typography, Spacing, Radius, Shadow } from "../constants/theme";
 
 const LOADING_MESSAGES = [
@@ -77,8 +77,9 @@ export default function AnalyzeScreen({ route, navigation }) {
       const mimeType = imageAsset.mimeType || "image/jpeg";
       const result = await analyzePestImage(base64, mimeType, context.trim());
 
-      // Save to history
+      // Save to history (local) and try remote save in background
       await saveScanResult(imageAsset.uri, result);
+      saveScanResultRemote(imageAsset.uri, result).catch(() => {});
 
       // Navigate to result
       navigation.replace("Result", {

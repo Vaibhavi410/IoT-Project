@@ -13,15 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { Colors as COLORS } from '../../constants/theme';
-
-const DUMMY_RESULT = {
-  pestName: 'Whitefly (Bemisia tabaci)',
-  confidence: '94% Match',
-  severity: 'High Risk 🔴',
-  crop: 'Tomato',
-  description:
-    'Whitefly colonies found on leaf undersides.\nRapid reproduction in humid conditions.',
-};
+import { getScanHistory as getLocalScanHistory, getScanHistoryRemote } from '../../services/historyStorage';
 
 const TREATMENTS = [
   { tier: 1, type: 'Organic', name: 'Neem oil spray', dosage: '5ml per litre' },
@@ -29,11 +21,8 @@ const TREATMENTS = [
   { tier: 3, type: 'Chemical', name: 'Imidacloprid 17.8% SL', dosage: '' },
 ];
 
-const RECENT_SCANS = [
-  { title: 'Aphids on Cotton - April 28', status: 'Resolved' },
-  { title: 'Fungal Blight on Wheat - April 25', status: 'Ongoing' },
-  { title: 'Spider Mites on Tomato - April 20', status: 'Resolved' },
-];
+// Recent scans will be loaded from local storage or remote backend when available
+const DUMMY_RESULT = {};
 
 function goBackCompat(navigation) {
   if (navigation?.canGoBack?.()) {
@@ -54,6 +43,7 @@ export default function PestIdentificationScreen() {
   const [phase, setPhase] = useState('idle'); // idle | analyzing | done
   const [dots, setDots] = useState('');
   const [appliedTiers, setAppliedTiers] = useState({});
+  const [recentScans, setRecentScans] = useState([]);
 
   const pulseAnim = useRef(new Animated.Value(0.85)).current;
 
@@ -133,6 +123,26 @@ export default function PestIdentificationScreen() {
     }
   }
 
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const remote = await getScanHistoryRemote();
+        if (remote && remote.length) {
+          if (mounted) setRecentScans(remote);
+          return;
+        }
+      } catch (e) {
+        // ignore
+      }
+      const local = await getLocalScanHistory();
+      if (mounted) setRecentScans(local);
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
   function scanAgain() {
     setImageUri(null);
     setAppliedTiers({});
@@ -272,27 +282,36 @@ export default function PestIdentificationScreen() {
           </View>
         )}
 
-        {/* History */}
-        {isReadyForResults && (
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Recent Scans</Text>
-            {RECENT_SCANS.map((item) => (
-              <View key={item.title} style={styles.historyRow}>
-                <View style={styles.historyLeft}>
-                  <Text style={styles.historyTitle}>{item.title}</Text>
+        {/* Recent Scans (local or remote) */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Recent Scans</Text>
+          {recentScans.length === 0 ? (
+            <Text style={{ color: '#666' }}>No recent scans</Text>
+          ) : (
+            recentScans.map((item, i) => {
+              const isRemote = !!item.pestName; // backend shape
+              const title = isRemote
+                ? `${item.pestName} - ${new Date(item.createdAt || item.updatedAt).toLocaleDateString()}`
+                : item.result?.pestName || item.title || `Scan ${i + 1}`;
+              const status = isRemote ? (item.status || 'new') : 'local';
+              return (
+                <View key={i.toString()} style={styles.historyRow}>
+                  <View style={styles.historyLeft}>
+                    <Text style={styles.historyTitle}>{title}</Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.historyStatus,
+                      status === 'Resolved' || status === 'resolved' ? styles.statusResolved : styles.statusOngoing,
+                    ]}
+                  >
+                    <Text style={styles.historyStatusText}>{status}</Text>
+                  </View>
                 </View>
-                <View
-                  style={[
-                    styles.historyStatus,
-                    item.status === 'Resolved' ? styles.statusResolved : styles.statusOngoing,
-                  ]}
-                >
-                  <Text style={styles.historyStatusText}>{item.status}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
+              );
+            })
+          )}
+        </View>
 
         <View style={{ height: 28 }} />
       </ScrollView>
