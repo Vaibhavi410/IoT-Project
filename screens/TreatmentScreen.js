@@ -1,72 +1,17 @@
-import React, { useState, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Colors, Typography, Spacing, Radius } from '../constants/theme';
 import TreatmentCard from '../components/TreatmentCard';
 import ToxicityWarningModal from '../components/ToxicityWarningModal';
 import { useLanguage } from '../context/LanguageContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Dummy data for testing
-const pestData = {
-  pest_name: "Aphid",
-  treatments: [
-    {
-      tier: 1,
-      type: "Organic",
-      name: "Neem Oil Spray",
-      dosage: "5ml per litre of water",
-      dilution_ratio: "1:200",
-      spray_schedule: "Every 3 days for 2 weeks",
-      reentry_interval: "4 hours",
-      effectiveness: 65,
-      cost: "Low"
-    },
-    {
-      tier: 2,
-      type: "Biological",
-      name: "Ladybug Introduction + Beauveria bassiana",
-      dosage: "2g per litre of water",
-      dilution_ratio: "1:500",
-      spray_schedule: "Once a week for 3 weeks",
-      reentry_interval: "2 hours",
-      effectiveness: 78,
-      cost: "Medium"
-    },
-    {
-      tier: 3,
-      type: "Chemical",
-      name: "Imidacloprid 17.8% SL",
-      dosage: "0.3ml per litre of water",
-      dilution_ratio: "1:3333",
-      spray_schedule: "Once, repeat after 15 days if needed",
-      reentry_interval: "48 hours",
-      effectiveness: 95,
-      cost: "Medium"
-    }
-  ]
-};
+const API_URL =
+  (typeof process !== 'undefined' && process.env && process.env.EXPO_PUBLIC_API_URL) ||
+  'https://iot-project-a0ho.onrender.com';
 
-// Dummy toxicity data
-const dummyToxicityData = {
-  chemical_name: "Imidacloprid 17.8% SL",
-  active_ingredient: "Imidacloprid",
-  toxicity_level: "HIGH",
-  who_class: "Class II - Moderately Hazardous",
-  safety_gear: ["Gloves", "Mask", "Goggles", "Full body suit"],
-  pre_harvest_interval: 21,
-  reentry_interval: 48,
-  first_aid: {
-    skin_contact: "Remove contaminated clothing. Wash skin thoroughly with soap and water.",
-    if_inhaled: "Move to fresh air immediately. If breathing is difficult, seek medical help.",
-    if_swallowed: "Do NOT induce vomiting. Call poison control immediately."
-  },
-  environmental: {
-    bees: true,
-    fish: true,
-    birds: false
-  },
-  emergency_contact: "1800-180-1551"
-};
+// Runtime-loaded treatments (fetched from backend when authenticated)
 
 export default function TreatmentScreen() {
   const navigation = useNavigation();
@@ -75,6 +20,8 @@ export default function TreatmentScreen() {
   const [appliedTiers, setAppliedTiers] = useState({});
   const [modalVisible, setModalVisible] = useState(false);
   const [pendingChemicalTier, setPendingChemicalTier] = useState(null);
+  const [treatments, setTreatments] = useState([]);
+  const [selectedTreatment, setSelectedTreatment] = useState(null);
 
   const handleToggle = (tierNum) => {
     setExpandedTier(expandedTier === tierNum ? null : tierNum);
@@ -103,6 +50,40 @@ export default function TreatmentScreen() {
       [tierNum]: true
     }));
   };
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const token = await AsyncStorage.getItem('pestify_token');
+        if (!token) return;
+        const resp = await fetch(`${API_URL}/api/treatment/my-treatments`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!resp.ok) return;
+        const body = await resp.json();
+        const mapped = (body?.data || []).map((tr, idx) => ({
+          _id: tr._id,
+          tier: idx + 1,
+          type: tr.pesticide?.name ? 'Chemical' : tr.organicAlternative?.name ? 'Organic' : 'Biological',
+          name: tr.treatmentName,
+          dosage: tr.pesticide?.dosage || tr.dosage || '',
+          dilution_ratio: tr.pesticide?.dilution_ratio || '',
+          spray_schedule: tr.frequency ? `${tr.frequency.interval || ''} ${tr.frequency.unit || ''}`.trim() : '',
+          reentry_interval: tr.pesticide?.reentry_interval || '',
+          effectiveness: tr.effectiveness || 0,
+          cost: tr.estimatedCost || '',
+          raw: tr,
+        }));
+        if (mounted) setTreatments(mapped);
+      } catch (e) {
+        // ignore
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   let currentTier = 1;
   const tiersCount = pestData.treatments.length;
@@ -144,7 +125,7 @@ export default function TreatmentScreen() {
         <View style={styles.headerInfoContainer}>
           <Text style={styles.title}>{t('treatment')}</Text>
           <Text style={styles.subtitle}>
-            {t('target_label')}: {pestData.pest_name}
+            {t('target_label')}: {treatments[0]?.raw?.pestId?.pestName || '—'}
           </Text>
 
           <View style={styles.progressContainer}>
@@ -157,16 +138,27 @@ export default function TreatmentScreen() {
           </View>
         </View>
 
-        {pestData.treatments.map((treatment) => (
-          <TreatmentCard
-            key={treatment.tier}
-            treatment={treatment}
-            isExpanded={expandedTier === treatment.tier}
-            onToggle={() => handleToggle(treatment.tier)}
-            isApplied={!!appliedTiers[treatment.tier]}
-            onApply={() => handleApply(treatment.tier, treatment.type)}
-          />
-        ))}
+        {treatments.length === 0 ? (
+          <View style={{ padding: Spacing.md }}>
+            <Text style={{ color: Colors.textSecondary }}>No treatments available</Text>
+          </View>
+        ) : (
+          treatments.map((treatment) => (
+            <TreatmentCard
+              key={treatment._id || treatment.tier}
+              treatment={treatment}
+              isExpanded={expandedTier === treatment.tier}
+              onToggle={() => handleToggle(treatment.tier)}
+              isApplied={!!appliedTiers[treatment.tier]}
+              onApply={() => {
+                if (treatment.type === 'Chemical') {
+                  setSelectedTreatment(treatment);
+                }
+                handleApply(treatment.tier, treatment.type);
+              }}
+            />
+          ))
+        )}
       </ScrollView>
 
       {/* Chemical Warning Modal */}
@@ -177,7 +169,20 @@ export default function TreatmentScreen() {
           setPendingChemicalTier(null);
         }}
         onConfirm={confirmChemicalUse}
-        chemicalData={dummyToxicityData}
+        chemicalData={
+          selectedTreatment?.raw?.pesticide || {
+            chemical_name: selectedTreatment?.name || '',
+            active_ingredient: '',
+            toxicity_level: '',
+            who_class: '',
+            safety_gear: [],
+            pre_harvest_interval: 0,
+            reentry_interval: 0,
+            first_aid: {},
+            environmental: {},
+            emergency_contact: '',
+          }
+        }
       />
     </View>
   );

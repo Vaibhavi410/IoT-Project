@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Colors as COLORS } from '../../constants/theme';
+import { saveScanResult, saveScanResultRemote } from '../../services/historyStorage';
 
 const SOIL_TYPES = ['Clay', 'Sandy', 'Loamy', 'Black', 'Red'];
 
@@ -106,6 +107,37 @@ export default function SoilAnalysisScreen() {
 
   function useSensorData() {
     // Disabled for now (future scope)
+  }
+
+  async function handleSaveReport() {
+    try {
+      const payload = {
+        pestName: 'Soil Report',
+        confidence: RESULTS.score || null,
+        severity: RESULTS.label ? RESULTS.label.split(' ')[0].toLowerCase() : 'medium',
+        cropType: RESULTS.crops?.[0]?.name || '',
+        imageUrl: null,
+        recommendations: RESULTS.fertilizer?.map((f) => f.text) || [],
+        notes: RESULTS.pestRisk?.map((p) => p.text).join('; ') || RESULTS.ph?.text || '',
+      };
+
+      // Save locally
+      await saveScanResult(null, payload);
+
+      // Try remote save (non-blocking)
+      saveScanResultRemote(null, payload).then((res) => {
+        if (res) {
+          Alert.alert('Saved', 'Soil report saved to your account');
+        } else {
+          Alert.alert('Saved', 'Soil report saved locally');
+        }
+      }).catch(() => {
+        Alert.alert('Saved', 'Soil report saved locally');
+      });
+    } catch (e) {
+      console.warn('Save soil report failed', e);
+      Alert.alert('Error', 'Failed to save soil report');
+    }
   }
 
   return (
@@ -382,7 +414,7 @@ export default function SoilAnalysisScreen() {
 
             <Pressable
               style={[styles.primaryBtn, { marginBottom: 6 }]}
-              onPress={() => Alert.alert('Saved', 'Dummy soil report saved.')}
+              onPress={handleSaveReport}
             >
               <Text style={styles.primaryBtnText}>Save Report</Text>
             </Pressable>

@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors as COLORS } from '../../constants/theme';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getScanHistory as getLocalScanHistory, getScanHistoryRemote } from '../../services/historyStorage';
 
 const REPORT_TYPES = [
   {
@@ -32,61 +34,7 @@ const REPORT_TYPES = [
   },
 ];
 
-const CUSTOM_RANGE_DUMMY = {
-  start: 'April 10, 2026',
-  end: 'April 22, 2026',
-};
-
-const PREVIEW_BY_TYPE = {
-  weekly: {
-    dateRange: 'April 24 - April 30, 2026',
-    farmName: "Vaibhavi's Farm",
-    totalPests: 6,
-    resolved: 4,
-    ongoing: 2,
-    topCrop: 'Cotton',
-    treatments: 5,
-  },
-  monthly: {
-    dateRange: 'April 1 - April 30, 2026',
-    farmName: "Vaibhavi's Farm",
-    totalPests: 6,
-    resolved: 4,
-    ongoing: 2,
-    topCrop: 'Cotton',
-    treatments: 5,
-  },
-  custom: {
-    dateRange: 'April 10 - April 22, 2026',
-    farmName: "Vaibhavi's Farm",
-    totalPests: 6,
-    resolved: 4,
-    ongoing: 2,
-    topCrop: 'Cotton',
-    treatments: 5,
-  },
-};
-
-const PREVIOUS_REPORTS = [
-  {
-    id: 'r1',
-    name: 'March 2026 Report',
-    generatedOn: 'Generated April 1',
-    size: '245 KB',
-  },
-  {
-    id: 'r2',
-    name: 'Week 3 April Report',
-    generatedOn: 'Generated April 21',
-    size: '198 KB',
-  },
-  {
-    id: 'r3',
-    name: 'Week 2 April Report',
-    generatedOn: 'Generated April 14',
-    size: '312 KB',
-  },
-];
+// runtime data
 
 function goBackCompat(navigation) {
   if (navigation.canGoBack()) {
@@ -106,16 +54,85 @@ export default function PDFReportScreen() {
   const [reportType, setReportType] = useState('monthly');
   const [generating, setGenerating] = useState(false);
   const [successVisible, setSuccessVisible] = useState(false);
+  const [recentScans, setRecentScans] = useState([]);
+  const [farmName, setFarmName] = useState('Your Farm');
+  const [previousReports, setPreviousReports] = useState([]);
 
-  const preview = useMemo(() => PREVIEW_BY_TYPE[reportType], [reportType]);
+  const preview = useMemo(() => {
+    const total = (recentScans || []).length;
+    const resolved = (recentScans || []).filter((r) => String(r.status).toLowerCase() === 'resolved').length;
+    const ongoing = total - resolved;
+    const counts = {};
+    (recentScans || []).forEach((r) => {
+      const crop = r.cropType || r.crop || (r.result && r.result.affectedCrops && r.result.affectedCrops[0]) || 'Unknown';
+      counts[crop] = (counts[crop] || 0) + 1;
+    });
+    const topCrop = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || '—';
+    return {
+      farmName: farmName,
+      dateRange: reportType === 'weekly' ? 'Last 7 days' : reportType === 'monthly' ? 'Last 30 days' : 'Custom range',
+      totalPests: total,
+      resolved,
+      ongoing,
+      topCrop,
+      treatments: (recentScans || []).reduce((acc, r) => acc + ((r.recommendations && r.recommendations.length) || (r.result && r.result.organicTreatments && r.result.organicTreatments.length) || 0), 0),
+    };
+  }, [recentScans, reportType, farmName]);
 
   const handleGenerate = () => {
     setGenerating(true);
     setTimeout(() => {
       setGenerating(false);
       setSuccessVisible(true);
+      (async () => {
+        try {
+          const gen = {
+            id: Date.now().toString(),
+            name: `${reportType} report ${new Date().toLocaleDateString()}`,
+            generatedOn: `Generated ${new Date().toLocaleDateString()}`,
+            size: '—',
+          };
+          const prev = JSON.parse((await AsyncStorage.getItem('generated_reports')) || '[]');
+          prev.unshift(gen);
+          await AsyncStorage.setItem('generated_reports', JSON.stringify(prev.slice(0, 10)));
+          setPreviousReports(prev.slice(0, 10));
+        } catch (e) {
+          // ignore
+        }
+      })();
     }, 2000);
   };
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const name = await AsyncStorage.getItem('user_name');
+        if (name && mounted) setFarmName(name);
+      } catch (e) {}
+
+      try {
+        const remote = await getScanHistoryRemote();
+        if (remote && remote.length && mounted) {
+          setRecentScans(remote);
+          return;
+        }
+      } catch (e) {}
+
+      try {
+        const local = await getLocalScanHistory();
+        if (mounted) setRecentScans(local || []);
+      } catch (e) {}
+
+      try {
+        const prev = JSON.parse((await AsyncStorage.getItem('generated_reports')) || '[]');
+        if (mounted) setPreviousReports(prev || []);
+      } catch (e) {}
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
@@ -154,8 +171,8 @@ export default function PDFReportScreen() {
         {reportType === 'custom' ? (
           <View style={styles.customBox}>
             <Text style={styles.customLabel}>Selected range (demo)</Text>
-            <Text style={styles.customLine}>Start: {CUSTOM_RANGE_DUMMY.start}</Text>
-            <Text style={styles.customLine}>End: {CUSTOM_RANGE_DUMMY.end}</Text>
+            <Text style={styles.customLine}>Start: —</Text>
+            <Text style={styles.customLine}>End: —</Text>
           </View>
         ) : null}
 
@@ -201,7 +218,7 @@ export default function PDFReportScreen() {
         </View>
 
         <Text style={styles.sectionHeading}>Previous Reports</Text>
-        {PREVIOUS_REPORTS.map((r) => (
+        {previousReports.map((r) => (
           <View key={r.id} style={styles.listCard}>
             <View style={styles.listMain}>
               <Text style={styles.listName}>{r.name}</Text>

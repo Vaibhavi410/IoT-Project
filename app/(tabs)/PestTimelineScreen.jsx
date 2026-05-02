@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors as COLORS } from '../../constants/theme';
+import { getScanHistory as getLocalScanHistory, getScanHistoryRemote, saveScanResultRemote } from '../../services/historyStorage';
 
 const FIELDS = [
   { id: 'A', label: 'Field A' },
@@ -27,81 +28,8 @@ const CROP_OPTIONS = ['Wheat', 'Rice', 'Tomato', 'Cotton'];
 
 const SEVERITY_ORDER = ['Low', 'Medium', 'High', 'Critical'];
 
-const GLOBAL_SUMMARY = {
-  totalScans: 6,
-  resolved: 4,
-  ongoing: 2,
-  mostCommonPest: 'Aphids',
-};
-
-const DUMMY_ENTRIES = [
-  {
-    id: 'e1',
-    fieldId: 'A',
-    dateLabel: 'April 20, 2026',
-    pestName: 'Whitefly',
-    emoji: '🦟',
-    severity: 'High',
-    crop: 'Cotton',
-    treatment: 'Imidacloprid schedule + yellow traps',
-    status: 'Resolved',
-  },
-  {
-    id: 'e2',
-    fieldId: 'A',
-    dateLabel: 'April 15, 2026',
-    pestName: 'Aphids',
-    emoji: '🐜',
-    severity: 'Medium',
-    crop: 'Tomato',
-    treatment: 'Neem oil spray (organic tier)',
-    status: 'Resolved',
-  },
-  {
-    id: 'e3',
-    fieldId: 'B',
-    dateLabel: 'April 12, 2026',
-    pestName: 'Aphids',
-    emoji: '🐜',
-    severity: 'Low',
-    crop: 'Wheat',
-    treatment: 'Insecticidal soap foliar wash',
-    status: 'Resolved',
-  },
-  {
-    id: 'e4',
-    fieldId: 'B',
-    dateLabel: 'April 8, 2026',
-    pestName: 'Fruit Borer',
-    emoji: '🐛',
-    severity: 'Critical',
-    crop: 'Tomato',
-    treatment: 'Bt spray + pheromone traps',
-    status: 'Ongoing',
-  },
-  {
-    id: 'e5',
-    fieldId: 'C',
-    dateLabel: 'April 5, 2026',
-    pestName: 'Jassids',
-    emoji: '🪲',
-    severity: 'Medium',
-    crop: 'Rice',
-    treatment: 'Neem-based botanical spray',
-    status: 'Resolved',
-  },
-  {
-    id: 'e6',
-    fieldId: 'A',
-    dateLabel: 'April 1, 2026',
-    pestName: 'Aphids',
-    emoji: '🐜',
-    severity: 'High',
-    crop: 'Cotton',
-    treatment: 'Systemic soil drench',
-    status: 'Ongoing',
-  },
-];
+// runtime-loaded recent scans (remote first, fallback to local)
+const DUMMY_ENTRIES = [];
 
 function goBackCompat(navigation) {
   if (navigation.canGoBack()) {
@@ -140,14 +68,73 @@ export default function PestTimelineScreen() {
   const [formSeverity, setFormSeverity] = useState('Medium');
   const [formCrop, setFormCrop] = useState('Tomato');
   const [formTreatment, setFormTreatment] = useState('');
+  const [recentScans, setRecentScans] = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const remote = await getScanHistoryRemote();
+        if (remote && remote.length) {
+          if (!mounted) return;
+          const mapped = remote.map((r) => ({
+            id: r._id || r.id,
+            fieldId: r.fieldId || 'A',
+            dateLabel: new Date(r.createdAt || r.updatedAt || r.timestamp).toLocaleDateString(),
+            pestName: r.pestName || (r.result && r.result.pestName) || 'Scan',
+            emoji: '🐛',
+            severity: r.severity || (r.result && r.result.severity) || 'Medium',
+            crop: r.cropType || (r.result && r.result.affectedCrops && r.result.affectedCrops[0]) || '',
+            treatment: (r.recommendations && r.recommendations[0]) || (r.result && r.result.recommendations && r.result.recommendations[0]) || '',
+            status: r.status || 'new',
+          }));
+          setRecentScans(mapped);
+          return;
+        }
+      } catch (e) {
+        // ignore
+      }
+
+      const local = await getLocalScanHistory();
+      if (!mounted) return;
+      const lm = (local || []).map((l) => ({
+        id: l.id,
+        fieldId: 'A',
+        dateLabel: new Date(l.timestamp).toLocaleDateString(),
+        pestName: l.result?.pestName || 'Scan',
+        emoji: '🐞',
+        severity: l.result?.severity || 'Medium',
+        crop: l.result?.cropType || (l.result?.affectedCrops?.[0]) || '',
+        treatment: l.result?.recommendations?.[0] || '',
+        status: l.result?.status || 'local',
+      }));
+      setRecentScans(lm);
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const GLOBAL_SUMMARY = useMemo(() => {
+    const total = (recentScans || []).length;
+    const resolved = (recentScans || []).filter((r) => String(r.status).toLowerCase() === 'resolved').length;
+    const ongoing = total - resolved;
+    const counts = {};
+    (recentScans || []).forEach((r) => {
+      const name = r.pestName || 'Unknown';
+      counts[name] = (counts[name] || 0) + 1;
+    });
+    const mostCommonPest = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || '—';
+    return { totalScans: total, resolved, ongoing, mostCommonPest };
+  }, [recentScans]);
 
   const filtered = useMemo(() => {
-    return DUMMY_ENTRIES.filter((e) => {
-      if (e.fieldId !== selectedField) return false;
+    return (recentScans || []).filter((e) => {
+      if (e.fieldId && e.fieldId !== selectedField) return false;
       if (filterStatus === 'All') return true;
-      return e.status === filterStatus;
+      return String(e.status).toLowerCase() === String(filterStatus).toLowerCase();
     });
-  }, [selectedField, filterStatus]);
+  }, [selectedField, filterStatus, recentScans]);
 
   const openModal = () => {
     setFormPest('');
@@ -159,6 +146,33 @@ export default function PestTimelineScreen() {
 
   const saveEntry = () => {
     setModalOpen(false);
+    const newEntry = {
+      id: Date.now().toString(),
+      fieldId: selectedField,
+      dateLabel: new Date().toLocaleDateString(),
+      pestName: formPest || 'Unknown',
+      emoji: '🐞',
+      severity: formSeverity,
+      crop: formCrop,
+      treatment: formTreatment,
+      status: 'new',
+    };
+    setRecentScans((p) => [newEntry, ...(p || [])]);
+
+    // Try to save remotely (non-blocking)
+    try {
+      saveScanResultRemote(null, {
+        pestName: newEntry.pestName,
+        confidence: null,
+        severity: newEntry.severity,
+        cropType: newEntry.crop,
+        imageUrl: null,
+        recommendations: newEntry.treatment ? [newEntry.treatment] : [],
+        notes: '',
+      }).catch(() => {});
+    } catch (e) {
+      // ignore
+    }
   };
 
   return (

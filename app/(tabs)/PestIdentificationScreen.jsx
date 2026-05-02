@@ -202,9 +202,9 @@ export default function PestIdentificationScreen() {
         {isReadyForResults && (
           <View style={styles.card}>
             <View style={styles.resultHeader}>
-              <Text style={styles.resultTitle}>{DUMMY_RESULT.pestName}</Text>
+              <Text style={styles.resultTitle}>{DUMMY_RESULT.pestName || 'Scan result pending'}</Text>
               <View style={styles.confidenceBadge}>
-                <Text style={styles.confidenceText}>{DUMMY_RESULT.confidence}</Text>
+                <Text style={styles.confidenceText}>{DUMMY_RESULT.confidence || ''}</Text>
               </View>
             </View>
 
@@ -212,15 +212,15 @@ export default function PestIdentificationScreen() {
               <Image source={previewSource} style={styles.resultImage} resizeMode="cover" />
               <View style={styles.resultBadges}>
                 <View style={styles.severityBadge}>
-                  <Text style={styles.severityText}>{DUMMY_RESULT.severity}</Text>
+                  <Text style={styles.severityText}>{DUMMY_RESULT.severity || ''}</Text>
                 </View>
                 <View style={styles.cropBadge}>
-                  <Text style={styles.cropText}>Affected crop: {DUMMY_RESULT.crop}</Text>
+                  <Text style={styles.cropText}>Affected crop: {DUMMY_RESULT.crop || ''}</Text>
                 </View>
               </View>
             </View>
 
-            <Text style={styles.desc}>{DUMMY_RESULT.description}</Text>
+            <Text style={styles.desc}>{DUMMY_RESULT.description || ''}</Text>
           </View>
         )}
 
@@ -262,7 +262,7 @@ export default function PestIdentificationScreen() {
           <View style={styles.actionsWrap}>
             <Pressable
               style={[styles.actionBtn, styles.actionPrimary]}
-              onPress={() => Alert.alert('Report', 'Dummy report generated.')}
+              onPress={() => navigation.navigate('PDFReport')}
             >
               <Text style={[styles.actionText, styles.actionTextPrimary]}>📄 Generate Report</Text>
             </Pressable>

@@ -1,49 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import TreatmentCard from '../../components/TreatmentCard';
 import { useLanguage } from '../../context/LanguageContext';
 
 import { Colors as COLORS } from '../../constants/theme';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Dummy data for testing
-const pestData = {
-  pest_name: "Aphid",
-  treatments: [
-    {
-      tier: 1,
-      type: "Organic",
-      name: "Neem Oil Spray",
-      dosage: "5ml per litre of water",
-      dilution_ratio: "1:200",
-      spray_schedule: "Every 3 days for 2 weeks",
-      reentry_interval: "4 hours",
-      effectiveness: 65,
-      cost: "Low"
-    },
-    {
-      tier: 2,
-      type: "Biological",
-      name: "Ladybug Introduction + Beauveria bassiana",
-      dosage: "2g per litre of water",
-      dilution_ratio: "1:500",
-      spray_schedule: "Once a week for 3 weeks",
-      reentry_interval: "2 hours",
-      effectiveness: 78,
-      cost: "Medium"
-    },
-    {
-      tier: 3,
-      type: "Chemical",
-      name: "Imidacloprid 17.8% SL",
-      dosage: "0.3ml per litre of water",
-      dilution_ratio: "1:3333",
-      spray_schedule: "Once, repeat after 15 days if needed",
-      reentry_interval: "48 hours",
-      effectiveness: 95,
-      cost: "Medium"
-    }
-  ]
-};
+const API_URL =
+  (typeof process !== 'undefined' && process.env && process.env.EXPO_PUBLIC_API_URL) ||
+  'https://iot-project-a0ho.onrender.com';
 
 export default function TreatmentScreen() {
   const { t } = useLanguage();
@@ -52,6 +17,41 @@ export default function TreatmentScreen() {
 
   // State to track applied treatments
   const [appliedTiers, setAppliedTiers] = useState({});
+  const [treatments, setTreatments] = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const token = await AsyncStorage.getItem('pestify_token');
+        if (!token) return;
+        const resp = await fetch(`${API_URL}/api/treatment/my-treatments`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!resp.ok) return;
+        const body = await resp.json();
+        const mapped = (body?.data || []).map((tr, idx) => ({
+          _id: tr._id,
+          tier: idx + 1,
+          type: tr.pesticide?.name ? 'Chemical' : tr.organicAlternative?.name ? 'Organic' : 'Biological',
+          name: tr.treatmentName,
+          dosage: tr.pesticide?.dosage || '',
+          dilution_ratio: tr.pesticide?.dilution_ratio || '',
+          spray_schedule: tr.frequency ? `${tr.frequency.interval || ''} ${tr.frequency.unit || ''}`.trim() : '',
+          reentry_interval: tr.pesticide?.reentry_interval || '',
+          effectiveness: tr.effectiveness || 0,
+          cost: tr.estimatedCost || '',
+          raw: tr,
+        }));
+        if (mounted) setTreatments(mapped);
+      } catch (e) {
+        // ignore
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleToggle = (tierNum) => {
     // If tapping already expanded tier, collapse it; otherwise expand tapped tier
@@ -83,7 +83,7 @@ export default function TreatmentScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <View style={styles.headerInfoContainer}>
         <Text style={styles.title}>Treatment Plan</Text>
-        <Text style={styles.subtitle}>Target: {pestData.pest_name}</Text>
+        <Text style={styles.subtitle}>Target: {treatments[0]?.raw?.pestId?.pestName || '—'}</Text>
         {/* Progress indicator */}
         <View style={styles.progressContainer}>
           <Text style={styles.progressText}>
@@ -95,16 +95,22 @@ export default function TreatmentScreen() {
         </View>
       </View>
 
-      {pestData.treatments.map((treatment) => (
-        <TreatmentCard
-          key={treatment.tier}
-          treatment={treatment}
-          isExpanded={expandedTier === treatment.tier}
-          onToggle={() => handleToggle(treatment.tier)}
-          isApplied={!!appliedTiers[treatment.tier]}
-          onApply={() => handleApply(treatment.tier)}
-        />
-      ))}
+      {treatments.length === 0 ? (
+        <View style={{ padding: 16 }}>
+          <Text style={{ color: COLORS.textSecondary }}>No treatments found</Text>
+        </View>
+      ) : (
+        treatments.map((treatment) => (
+          <TreatmentCard
+            key={treatment._id || treatment.tier}
+            treatment={treatment}
+            isExpanded={expandedTier === treatment.tier}
+            onToggle={() => handleToggle(treatment.tier)}
+            isApplied={!!appliedTiers[treatment.tier]}
+            onApply={() => handleApply(treatment.tier)}
+          />
+        ))
+      )}
     </ScrollView>
   );
 }
