@@ -17,7 +17,7 @@ import {
 const pestifyLogo = require("../assets/images/pestify-logo-mark.png");
 
 export default function SignInScreen({ navigation }) {
-  const [activeTab, setActiveTab] = useState("phone");
+  const [activeTab, setActiveTab] = useState("email");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,12 +26,14 @@ export default function SignInScreen({ navigation }) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
-  const [nameStep, setNameStep] = useState(false);
   const [name, setName] = useState("");
   const [showSignUp, setShowSignUp] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
-  const [firebaseIdToken, setFirebaseIdToken] = useState(null);
   const otpRefs = useRef([]);
+  // Note: Google auth is not automatically configured in this repo. The
+  // Google button will show instructions if pressed. To enable it, add
+  // appropriate OAuth client IDs and configure expo-auth-session or native
+  // Google Sign-In in the project.
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -95,14 +97,8 @@ export default function SignInScreen({ navigation }) {
         return;
       }
       const result = await confirmation.confirm(enteredOtp);
-      // obtain Firebase ID token to exchange with backend later
-      try {
-        const idToken = await result.user.getIdToken();
-        setFirebaseIdToken(idToken);
-      } catch (e) {
-        console.warn('Failed to read Firebase ID token', e);
-      }
-      setNameStep(true);
+      // finalize sign-in flow immediately
+      await finalizeSignIn(result.user);
     } catch (_error) {
       alert("Invalid OTP. Please try again.");
     } finally {
@@ -118,13 +114,7 @@ export default function SignInScreen({ navigation }) {
     setLoading(true);
     try {
       const userCredential = await auth().signInWithEmailAndPassword(email, password);
-      try {
-        const idToken = await userCredential.user.getIdToken();
-        setFirebaseIdToken(idToken);
-      } catch (e) {
-        console.warn('Failed to get Firebase ID token for email sign-in', e);
-      }
-      setNameStep(true);
+      await finalizeSignIn(userCredential.user);
     } catch (_error) {
       // Sign-in failed; surface message
       alert(_error.message || 'Sign in failed');
@@ -154,14 +144,11 @@ export default function SignInScreen({ navigation }) {
         console.warn('Failed to set displayName', e);
       }
       try {
-        const idToken = await cred.user.getIdToken();
-        setFirebaseIdToken(idToken);
-      } catch (e) {
-        console.warn('Failed to get Firebase ID token after sign-up', e);
+        // proceed to finalize sign-in immediately
+        await finalizeSignIn(cred.user);
+      } finally {
+        setShowSignUp(false);
       }
-      // proceed to name step to finish onboarding and exchange token with backend
-      setShowSignUp(false);
-      setNameStep(true);
     } catch (e) {
       alert(e.message || 'Sign up failed');
     } finally {
@@ -170,66 +157,51 @@ export default function SignInScreen({ navigation }) {
   };
 
   const handleGoogleSignIn = () => {
-    setNameStep(true);
-  };
-
-  const handleStart = async () => {
-    if (!name.trim()) {
-      alert("Please enter your name");
-      return;
-    }
-    const BACKEND_URL = 'https://iot-project-a0ho.onrender.com';
-    // If we have a Firebase ID token, exchange it with backend to get app JWT
-    if (firebaseIdToken) {
-      setLoading(true);
-      try {
-        const resp = await fetch(`${BACKEND_URL}/api/auth/firebase`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ idToken: firebaseIdToken, name: name.trim() }),
-        });
-        const data = await resp.json().catch(() => null);
-        if (data?.token) {
-          await AsyncStorage.setItem('pestify_token', data.token);
-        }
-      } catch (e) {
-        console.warn('Backend auth exchange failed', e);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    await AsyncStorage.setItem("user_name", name.trim());
-    navigation.replace("Main");
-  };
-
-  if (nameStep) {
-    return (
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <View style={styles.nameContainer}>
-          <Text style={styles.nameEmoji}>👋</Text>
-          <Text style={styles.nameTitle}>What is your name?</Text>
-          <Text style={styles.nameSubtitle}>
-            So we can personalize your experience
-          </Text>
-          <TextInput
-            style={styles.nameInput}
-            placeholder="Enter your name"
-            placeholderTextColor="#999"
-            value={name}
-            onChangeText={setName}
-            autoFocus
-          />
-          <TouchableOpacity style={styles.startBtn} onPress={handleStart}>
-            <Text style={styles.startBtnText}>Start Using Pestify 🚀</Text>
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
+    alert(
+      'Google sign-in is not configured in this build. To enable it, add Google OAuth client IDs to app config and install/configure expo-auth-session or native Google Sign-In. I can help set this up.'
     );
-  }
+  };
+
+  // exchange Firebase idToken with backend, persist app JWT and user name, then navigate
+  const finalizeSignIn = async (user) => {
+    try {
+      if (!user) return;
+      let idToken = null;
+      try {
+        idToken = await user.getIdToken();
+      } catch (e) {
+        console.warn('Failed to get ID token', e);
+      }
+
+      if (idToken) {
+        const BACKEND_URL = 'https://iot-project-a0ho.onrender.com';
+        try {
+          const resp = await fetch(`${BACKEND_URL}/api/auth/firebase`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken, name: user.displayName || '' }),
+          });
+          const data = await resp.json().catch(() => null);
+          if (data?.token) {
+            await AsyncStorage.setItem('pestify_token', data.token);
+          }
+        } catch (e) {
+          console.warn('Backend auth exchange failed', e);
+        }
+      }
+
+      const displayName = user.displayName || user.email || user.phoneNumber || '';
+      if (displayName) {
+        await AsyncStorage.setItem('user_name', displayName);
+      }
+    } catch (e) {
+      console.warn('finalizeSignIn error', e);
+    } finally {
+      navigation.replace('Main');
+    }
+  };
+
+  // nameStep removed: finalizeSignIn handles navigation and onboarding immediately
 
   return (
     <KeyboardAvoidingView
@@ -247,37 +219,6 @@ export default function SignInScreen({ navigation }) {
         </View>
 
         <View style={styles.card}>
-          <View style={styles.tabRow}>
-            <TouchableOpacity
-              style={[styles.tab, activeTab === "phone" && styles.tabActive]}
-              onPress={() => {
-                setActiveTab("phone");
-                setOtpSent(false);
-              }}
-            >
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === "phone" && styles.tabTextActive,
-                ]}
-              >
-                📱 Phone
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.tab, activeTab === "email" && styles.tabActive]}
-              onPress={() => setActiveTab("email")}
-            >
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === "email" && styles.tabTextActive,
-                ]}
-              >
-                ✉️ Email
-              </Text>
-            </TouchableOpacity>
-          </View>
 
           {activeTab === "phone" && (
             <>
