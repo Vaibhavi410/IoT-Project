@@ -105,9 +105,11 @@ export default function PestIdentificationScreen() {
       aspect: [4, 3],
     });
     if (!result.canceled && result.assets?.[0]?.uri) {
-      setImageUri(result.assets[0].uri);
-      setAppliedTiers({});
-      setPhase('analyzing');
+      const asset = result.assets[0];
+      // Navigate to Analyze screen which performs the AI call
+      navigation.navigate('Analyze', {
+        imageAsset: { uri: asset.uri, mimeType: asset.type || 'image/jpeg' },
+      });
     }
   }
 
@@ -124,9 +126,10 @@ export default function PestIdentificationScreen() {
       aspect: [4, 3],
     });
     if (!result.canceled && result.assets?.[0]?.uri) {
-      setImageUri(result.assets[0].uri);
-      setAppliedTiers({});
-      setPhase('analyzing');
+      const asset = result.assets[0];
+      navigation.navigate('Analyze', {
+        imageAsset: { uri: asset.uri, mimeType: asset.type || 'image/jpeg' },
+      });
     }
   }
 
