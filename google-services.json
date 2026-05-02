@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "312658159361",
+    "project_id": "pestify-8179a",
+    "storage_bucket": "pestify-8179a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:312658159361:android:3aac0387de489bf8e95d00",
+        "android_client_info": {
+          "package_name": "com.pestify"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD1Q9BxmtK2geZq8KwTXIx7dihOlvzA4cM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
