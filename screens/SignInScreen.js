@@ -1,6 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import auth from "@react-native-firebase/auth";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import * as WebBrowser from "expo-web-browser";
+import * as Google from "expo-auth-session/providers/google";
+import Constants from "expo-constants";
 import {
   ActivityIndicator,
   Image,
@@ -25,15 +28,40 @@ export default function SignInScreen({ navigation }) {
   const [name, setName] = useState("");
   const [showSignUp, setShowSignUp] = useState(false);
   
-  // Note: Google auth is not automatically configured in this repo. The
-  // Google button will show instructions if pressed. To enable it, add
-  // appropriate OAuth client IDs and configure expo-auth-session or native
-  // Google Sign-In in the project.
+  // Configure Expo AuthSession + Google. Client IDs should be added to
+  // `app.json` under `expo.extra.google` (placeholders added there).
+  WebBrowser.maybeCompleteAuthSession();
 
-  
+  const extra = Constants.expoConfig?.extra || Constants.manifest?.extra || {};
+  const googleCfg = extra.google || {};
+  const ANDROID_CLIENT_ID = googleCfg.androidClientId;
+  const IOS_CLIENT_ID = googleCfg.iosClientId;
+  const EXPO_CLIENT_ID = googleCfg.expoClientId;
+  const WEB_CLIENT_ID = googleCfg.webClientId;
 
-  
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    clientId: WEB_CLIENT_ID || undefined,
+    iosClientId: IOS_CLIENT_ID || undefined,
+    androidClientId: ANDROID_CLIENT_ID || undefined,
+    expoClientId: EXPO_CLIENT_ID || undefined,
+  });
 
+  useEffect(() => {
+    if (response?.type === "success") {
+      const id_token = response.params?.id_token || response.params?.id_token;
+      if (!id_token) {
+        alert("Google authentication failed: no id token returned");
+        return;
+      }
+      const credential = auth.GoogleAuthProvider.credential(id_token);
+      setLoading(true);
+      auth()
+        .signInWithCredential(credential)
+        .then((userCredential) => finalizeSignIn(userCredential.user))
+        .catch((err) => alert(err.message || "Google sign-in failed"))
+        .finally(() => setLoading(false));
+    }
+  }, [response]);
   const handleEmailSignIn = async () => {
     if (!email.trim() || !password.trim()) {
       alert("Please enter email and password");
@@ -85,9 +113,14 @@ export default function SignInScreen({ navigation }) {
   };
 
   const handleGoogleSignIn = () => {
-    alert(
-      'Google sign-in is not configured in this build. To enable it, add Google OAuth client IDs to app config and install/configure expo-auth-session or native Google Sign-In. I can help set this up.'
-    );
+    const configured = ANDROID_CLIENT_ID || IOS_CLIENT_ID || EXPO_CLIENT_ID || WEB_CLIENT_ID;
+    if (!configured || !request) {
+      alert(
+        'Google sign-in is not configured in this build. To enable it, add Google OAuth client IDs to app config (app.json -> expo.extra.google) and install/configure expo-auth-session, then rebuild with EAS.'
+      );
+      return;
+    }
+    promptAsync({ useProxy: true });
   };
 
   // exchange Firebase idToken with backend, persist app JWT and user name, then navigate
