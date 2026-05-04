@@ -66,30 +66,11 @@ export function getSpeechLocale(langCode) {
   return SPEECH_LOCALE_MAP[langCode] || 'en-US';
 }
 
-const API_URL =
-  (typeof process !== 'undefined' && process.env && process.env.EXPO_PUBLIC_API_URL) ||
-  'https://iot-project-a0ho.onrender.com';
-
 /**
- * Query the backend text assistant which proxies Gemini.
- * Returns a string reply or throws.
+ * Voice assistant response.
+ * This app version does NOT call any external AI services directly.
  */
-export async function queryVoiceAssistant(question, langCode) {
+export async function queryVoiceAssistant(question, langCode, t) {
   if (!question) return '';
-  try {
-    const resp = await fetch(`${API_URL}/api/ai/text`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: question, langCode }),
-    });
-    if (!resp.ok) {
-      const txt = await resp.text().catch(() => '');
-      throw new Error(txt || `Assistant returned ${resp.status}`);
-    }
-    const payload = await resp.json().catch(() => null);
-    return payload?.text || '';
-  } catch (e) {
-    console.warn('Voice assistant query failed', e);
-    throw e;
-  }
+  return getDummyVoiceResponse(question, langCode, t);
 }

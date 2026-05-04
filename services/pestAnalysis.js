@@ -1,57 +1,52 @@
-// services/pestAnalysis.js
-// Proxy to backend AI analyze endpoint. Backend will call Gemini/other model.
+import axios from 'axios';
+import { getApiBaseUrl } from './apiBaseUrl';
 
-const API_URL =
-  (typeof process !== 'undefined' && process.env && process.env.EXPO_PUBLIC_API_URL) ||
-  'https://iot-project-a0ho.onrender.com';
+const BASE_URL = getApiBaseUrl();
 
-/**
- * Analyzes a crop image by sending it to the backend AI endpoint.
- * @param {string} base64Image - Base64 encoded image (without data URI prefix)
- * @param {string} mimeType
- * @param {string} additionalContext
- */
-export async function analyzePestImage(base64Image, mimeType = 'image/jpeg', additionalContext = '') {
-  if (!base64Image) throw new Error('MISSING_IMAGE');
-
-  const resp = await fetch(`${API_URL}/api/ai/analyze`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ base64Image, mimeType, additionalContext }),
-  });
-
-  if (!resp.ok) {
-    const text = await resp.text().catch(() => 'AI backend error');
-    throw new Error(text || `AI backend returned ${resp.status}`);
-  }
-
-  const payload = await resp.json().catch(() => null);
-  if (!payload) throw new Error('Empty response from AI backend');
-
-  if (!payload.success) {
-    throw new Error(payload.message || 'AI backend failed');
-  }
-
-  // If the backend returned parsed `data` use it, otherwise return raw text
-  return payload.data || payload.raw || {};
+function joinUrl(base, path) {
+  const b = String(base || '').replace(/\/+$/, '');
+  const p = String(path || '').replace(/^\/+/, '');
+  return `${b}/${p}`;
 }
 
-export const SEVERITY_COLORS = {
-  Low: '#4caf50',
-  Moderate: '#ff9800',
-  High: '#f44336',
-  Critical: '#7b1fa2',
-};
+export async function analyzePest(imageBase64, cropType, location) {
+  try {
+    const url = joinUrl(BASE_URL, '/api/ai/analyze-pest');
+    const resp = await axios.post(
+      url,
+      { imageBase64, cropType, location },
+      { timeout: 120000 }
+    );
+    const body = resp?.data;
+    if (body && body.success === false) {
+      return { error: true, message: body.message || 'Analysis failed' };
+    }
+    if (body && body.success === true && body.data) {
+      return body.data;
+    }
+    return { error: true, message: 'Analysis failed' };
+  } catch (error) {
+    return { error: true, message: 'Analysis failed' };
+  }
+}
 
-export const SEVERITY_BG = {
-  Low: '#e8f5e9',
-  Moderate: '#fff3e0',
-  High: '#ffebee',
-  Critical: '#f3e5f5',
-};
+export async function getPestHistory(userId) {
+  try {
+    const url = joinUrl(BASE_URL, `/api/ai/history/${userId}`);
+    const resp = await axios.get(url);
+    return Array.isArray(resp?.data?.data) ? resp.data.data : [];
+  } catch (error) {
+    return [];
+  }
+}
 
-export const SPREAD_COLORS = {
-  Low: '#4caf50',
-  Moderate: '#ff9800',
-  High: '#f44336',
-};
+export async function deletePestScan(id) {
+  try {
+    const url = joinUrl(BASE_URL, `/api/ai/${id}`);
+    const resp = await axios.delete(url);
+    if (resp?.data?.success) return { success: true };
+    return { error: true };
+  } catch (error) {
+    return { error: true };
+  }
+}

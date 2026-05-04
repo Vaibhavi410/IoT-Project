@@ -6,10 +6,9 @@ import TreatmentCard from '../components/TreatmentCard';
 import ToxicityWarningModal from '../components/ToxicityWarningModal';
 import { useLanguage } from '../context/LanguageContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getApiBaseUrl } from '../services/apiBaseUrl';
 
-const API_URL =
-  (typeof process !== 'undefined' && process.env && process.env.EXPO_PUBLIC_API_URL) ||
-  'https://iot-project-a0ho.onrender.com';
+const API_URL = getApiBaseUrl();
 
 // Runtime-loaded treatments (fetched from backend when authenticated)
 

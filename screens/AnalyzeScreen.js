@@ -1,108 +1,91 @@
-// screens/AnalyzeScreen.js
-import React, { useState, useEffect, useRef } from "react";
+import React, { useMemo, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
-  Animated,
+  ActivityIndicator,
   Alert,
-  Platform,
+  Image,
   KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import * as FileSystem from "expo-file-system";
+import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
-import { analyzePestImage } from "../services/pestAnalysis";
-import { saveScanResult, saveScanResultRemote } from "../services/historyStorage";
-import { Colors, Typography, Spacing, Radius, Shadow } from "../constants/theme";
+import { analyzePest } from "../services/pestAnalysis";
+import { Colors, Radius, Shadow, Spacing, Typography } from "../constants/theme";
 
-const LOADING_MESSAGES = [
-  "Examining crop image...",
-  "Identifying pest characteristics...",
-  "Cross-referencing pest database...",
-  "Analyzing damage patterns...",
-  "Generating treatment plan...",
-];
-
-export default function AnalyzeScreen({ route, navigation }) {
-  const { imageAsset } = route.params;
-  const [context, setContext] = useState("");
+export default function AnalyzeScreen({ navigation }) {
+  const [asset, setAsset] = useState(null); // { uri, base64 }
+  const [cropType, setCropType] = useState("");
+  const [location, setLocation] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
-  const [error, setError] = useState(null);
 
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const loadingInterval = useRef(null);
+  const imageUri = asset?.uri || null;
+  const imageBase64 = asset?.base64 || null;
 
-  useEffect(() => {
-    return () => {
-      if (loadingInterval.current) clearInterval(loadingInterval.current);
-    };
-  }, []);
+  const canAnalyze = useMemo(() => {
+    return !!imageBase64 && cropType.trim().length > 0 && location.trim().length > 0 && !isAnalyzing;
+  }, [imageBase64, cropType, location, isAnalyzing]);
 
-  function startPulse() {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.06, duration: 800, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-      ])
-    ).start();
+  async function pickFromCamera() {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (perm.status !== "granted") {
+      Alert.alert("Camera permission required", "Please allow camera access to take a photo.");
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.9,
+      base64: true,
+    });
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      setAsset({ uri: result.assets[0].uri, base64: result.assets[0].base64 });
+    }
   }
 
-  function stopPulse() {
-    pulseAnim.stopAnimation();
-    pulseAnim.setValue(1);
+  async function pickFromGallery() {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (perm.status !== "granted") {
+      Alert.alert("Gallery permission required", "Please allow gallery access to upload an image.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.9,
+      base64: true,
+    });
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      setAsset({ uri: result.assets[0].uri, base64: result.assets[0].base64 });
+    }
   }
 
   async function handleAnalyze() {
-    setError(null);
+    if (!imageBase64) {
+      Alert.alert("Upload image", "Please upload a clear crop image first.");
+      return;
+    }
+
     setIsAnalyzing(true);
-    setLoadingMsgIndex(0);
-    startPulse();
-
-    // Cycle through loading messages
-    loadingInterval.current = setInterval(() => {
-      setLoadingMsgIndex((prev) => (prev + 1) % LOADING_MESSAGES.length);
-    }, 2000);
-
     try {
-      // Convert image to base64
-      const base64 = await FileSystem.readAsStringAsync(imageAsset.uri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-
-      const mimeType = imageAsset.mimeType || "image/jpeg";
-      const result = await analyzePestImage(base64, mimeType, context.trim());
-
-      // Save to history (local) and try remote save in background
-      await saveScanResult(imageAsset.uri, result);
-      saveScanResultRemote(imageAsset.uri, result).catch(() => {});
-
-      // Navigate to result
-      navigation.replace("Result", {
+      const result = await analyzePest(imageBase64, cropType.trim(), location.trim());
+      if (!result || result.error) {
+        Alert.alert("Error", "Analysis failed. Please try again.");
+        return;
+      }
+      navigation.navigate("Result", {
         result,
-        imageUri: imageAsset.uri,
+        imageUri,
         fromHistory: false,
       });
-    } catch (err) {
-      stopPulse();
-      setIsAnalyzing(false);
-
-      if (err.message === "API_KEY_MISSING") {
-        setError(
-          "API key not configured. Please add your Anthropic API key in services/pestAnalysis.js"
-        );
-      } else {
-        setError(err.message || "Analysis failed. Please try again.");
-      }
+    } catch (e) {
+      Alert.alert("Error", "Analysis failed. Please try again.");
     } finally {
-      if (loadingInterval.current) {
-        clearInterval(loadingInterval.current);
-        loadingInterval.current = null;
-      }
+      setIsAnalyzing(false);
     }
   }
 
@@ -116,186 +99,119 @@ export default function AnalyzeScreen({ route, navigation }) {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Image Preview */}
-        <Animated.View
-          style={[styles.imageContainer, { transform: [{ scale: pulseAnim }] }]}
-        >
-          <Image source={{ uri: imageAsset.uri }} style={styles.image} resizeMode="cover" />
-          {isAnalyzing && (
-            <View style={styles.scanOverlay}>
-              <LinearGradient
-                colors={["transparent", "rgba(26,58,26,0.7)"]}
-                style={styles.scanGradient}
-              >
-                <Text style={styles.scanOverlayText}>🔍 Analyzing...</Text>
-              </LinearGradient>
-            </View>
-          )}
-        </Animated.View>
+        <View style={styles.card}>
+          <Text style={styles.title}>Crop Image</Text>
 
-        {/* Loading State */}
+          <View style={styles.previewFrame}>
+            {imageUri ? (
+              <Image source={{ uri: imageUri }} style={styles.previewImage} resizeMode="cover" />
+            ) : (
+              <View style={styles.previewPlaceholder}>
+                <Text style={styles.previewPlaceholderText}>No image selected</Text>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.pickRow}>
+            <TouchableOpacity style={styles.pickBtn} onPress={pickFromCamera} disabled={isAnalyzing}>
+              <Text style={styles.pickBtnText}>📷 Camera</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.pickBtn} onPress={pickFromGallery} disabled={isAnalyzing}>
+              <Text style={styles.pickBtnText}>🖼️ Gallery</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.title}>Crop Details</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Crop type (e.g., Tomato)"
+            placeholderTextColor={Colors.textMuted}
+            value={cropType}
+            onChangeText={setCropType}
+            editable={!isAnalyzing}
+          />
+          <TextInput
+            style={[styles.input, { marginTop: Spacing.md }]}
+            placeholder="Location (e.g., Pune, Maharashtra)"
+            placeholderTextColor={Colors.textMuted}
+            value={location}
+            onChangeText={setLocation}
+            editable={!isAnalyzing}
+          />
+        </View>
+
         {isAnalyzing && (
-          <View style={styles.loadingCard}>
-            <Text style={styles.loadingMessage}>{LOADING_MESSAGES[loadingMsgIndex]}</Text>
-            <View style={styles.loadingDots}>
-              <LoadingDot delay={0} />
-              <LoadingDot delay={200} />
-              <LoadingDot delay={400} />
-            </View>
-            <Text style={styles.loadingHint}>
-              Pestify AI is examining your crop image for pest identification
-            </Text>
+          <View style={[styles.card, styles.loadingCard]}>
+            <ActivityIndicator size="large" color={Colors.primary} />
+            <Text style={styles.loadingText}>AI analyzing your crop...</Text>
           </View>
         )}
 
-        {/* Context Input */}
-        {!isAnalyzing && (
-          <>
-            <View style={styles.contextSection}>
-              <Text style={styles.contextLabel}>Additional Context (Optional)</Text>
-              <TextInput
-                style={styles.contextInput}
-                placeholder="e.g., Rice crop in Maharashtra, monsoon season, 3 weeks old infestation..."
-                placeholderTextColor={Colors.textMuted}
-                multiline
-                numberOfLines={3}
-                value={context}
-                onChangeText={setContext}
-                textAlignVertical="top"
-              />
-              <Text style={styles.contextHint}>
-                Providing crop type and location improves accuracy
-              </Text>
-            </View>
-
-            {/* Error */}
-            {error && (
-              <View style={styles.errorCard}>
-                <Text style={styles.errorIcon}>⚠️</Text>
-                <Text style={styles.errorText}>{error}</Text>
-              </View>
-            )}
-
-            {/* Analyze Button */}
-            <TouchableOpacity
-              style={styles.analyzeBtn}
-              onPress={handleAnalyze}
-              activeOpacity={0.85}
-            >
-              <LinearGradient
-                colors={[Colors.primary, Colors.primaryLight]}
-                style={styles.analyzeBtnGradient}
-              >
-                <Text style={styles.analyzeBtnText}>🔬 Identify Pest</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.retakeBtn}
-              onPress={() => navigation.goBack()}
-            >
-              <Text style={styles.retakeBtnText}>↩ Use Different Image</Text>
-            </TouchableOpacity>
-          </>
-        )}
-
-        <View style={{ height: 32 }} />
+        <TouchableOpacity
+          style={[styles.analyzeBtn, !canAnalyze && styles.analyzeBtnDisabled]}
+          onPress={handleAnalyze}
+          disabled={!canAnalyze}
+          activeOpacity={0.85}
+        >
+          <LinearGradient
+            colors={[Colors.primary, Colors.primaryLight]}
+            style={styles.analyzeBtnGradient}
+          >
+            <Text style={styles.analyzeBtnText}>🔬 Analyze Pest</Text>
+          </LinearGradient>
+        </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
-function LoadingDot({ delay }) {
-  const anim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    setTimeout(() => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(anim, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(anim, { toValue: 0, duration: 500, useNativeDriver: true }),
-        ])
-      ).start();
-    }, delay);
-  }, []);
-
-  return (
-    <Animated.View
-      style={[styles.dot, { opacity: anim, transform: [{ scale: anim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1.2] }) }] }]}
-    />
-  );
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.cream },
-  scrollContent: { padding: Spacing.xl },
+  scrollContent: { padding: Spacing.xl, paddingBottom: 40 },
 
-  imageContainer: {
-    borderRadius: Radius.lg,
-    overflow: "hidden",
-    marginBottom: Spacing.xl,
-    ...Shadow.lg,
-  },
-  image: {
-    width: "100%",
-    height: 280,
-  },
-  scanOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "flex-end",
-  },
-  scanGradient: {
-    padding: Spacing.lg,
-    alignItems: "center",
-  },
-  scanOverlayText: {
-    color: Colors.white,
-    fontSize: Typography.sizes.md,
-    fontWeight: Typography.weights.semibold,
-  },
-
-  loadingCard: {
+  card: {
     backgroundColor: Colors.white,
     borderRadius: Radius.lg,
-    padding: Spacing.xxl,
-    alignItems: "center",
+    padding: Spacing.xl,
+    marginBottom: Spacing.lg,
     ...Shadow.md,
     borderWidth: 1,
     borderColor: Colors.borderLight,
-    marginBottom: Spacing.xl,
   },
-  loadingMessage: {
-    fontSize: Typography.sizes.lg,
-    fontWeight: Typography.weights.semibold,
+  title: {
+    fontSize: Typography.sizes.md,
+    fontWeight: Typography.weights.bold,
     color: Colors.textPrimary,
-    textAlign: "center",
-    marginBottom: Spacing.lg,
-  },
-  loadingDots: {
-    flexDirection: "row",
-    gap: Spacing.sm,
     marginBottom: Spacing.md,
   },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: Colors.primary,
-  },
-  loadingHint: {
-    fontSize: Typography.sizes.sm,
-    color: Colors.textMuted,
-    textAlign: "center",
-  },
 
-  contextSection: { marginBottom: Spacing.xl },
-  contextLabel: {
-    fontSize: Typography.sizes.sm,
-    fontWeight: Typography.weights.semibold,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.sm,
+  previewFrame: {
+    height: 260,
+    borderRadius: Radius.md,
+    overflow: "hidden",
+    backgroundColor: Colors.primaryMuted,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
   },
-  contextInput: {
+  previewImage: { width: "100%", height: "100%" },
+  previewPlaceholder: { flex: 1, alignItems: "center", justifyContent: "center" },
+  previewPlaceholderText: { color: Colors.textMuted, fontWeight: Typography.weights.semibold },
+
+  pickRow: { flexDirection: "row", gap: Spacing.md, marginTop: Spacing.lg },
+  pickBtn: {
+    flex: 1,
+    backgroundColor: Colors.sand,
+    borderRadius: Radius.md,
+    paddingVertical: Spacing.md,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  pickBtnText: { fontWeight: Typography.weights.bold, color: Colors.textSecondary },
+
+  input: {
     backgroundColor: Colors.white,
     borderRadius: Radius.md,
     borderWidth: 1.5,
@@ -303,56 +219,18 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     fontSize: Typography.sizes.sm,
     color: Colors.textPrimary,
-    minHeight: 80,
-    ...Shadow.sm,
-  },
-  contextHint: {
-    fontSize: Typography.sizes.xs,
-    color: Colors.textMuted,
-    marginTop: Spacing.xs,
   },
 
-  errorCard: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    backgroundColor: Colors.dangerBg,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
-    gap: Spacing.sm,
-    marginBottom: Spacing.lg,
-    borderWidth: 1,
-    borderColor: "#ffcdd2",
-  },
-  errorIcon: { fontSize: 18 },
-  errorText: {
-    flex: 1,
-    fontSize: Typography.sizes.sm,
-    color: Colors.danger,
-    lineHeight: 20,
-  },
-
-  analyzeBtn: {
-    borderRadius: Radius.lg,
-    overflow: "hidden",
-    marginBottom: Spacing.md,
-    ...Shadow.md,
-  },
-  analyzeBtnGradient: {
-    paddingVertical: Spacing.lg,
-    alignItems: "center",
-  },
-  analyzeBtnText: {
-    fontSize: Typography.sizes.lg,
-    fontWeight: Typography.weights.bold,
-    color: Colors.white,
-  },
-
-  retakeBtn: {
-    paddingVertical: Spacing.md,
-    alignItems: "center",
-  },
-  retakeBtnText: {
+  loadingCard: { alignItems: "center" },
+  loadingText: {
+    marginTop: Spacing.md,
     fontSize: Typography.sizes.md,
+    fontWeight: Typography.weights.semibold,
     color: Colors.textSecondary,
   },
+
+  analyzeBtn: { borderRadius: Radius.lg, overflow: "hidden", ...Shadow.md },
+  analyzeBtnDisabled: { opacity: 0.55 },
+  analyzeBtnGradient: { paddingVertical: Spacing.lg, alignItems: "center" },
+  analyzeBtnText: { color: Colors.white, fontSize: Typography.sizes.lg, fontWeight: Typography.weights.bold },
 });

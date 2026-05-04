@@ -1,12 +1,11 @@
 // services/historyStorage.js
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getApiBaseUrl } from "./apiBaseUrl";
 
 const HISTORY_KEY = "pestify_scan_history";
 const MAX_HISTORY = 50;
 
-const API_URL =
-  (typeof process !== 'undefined' && process.env && process.env.EXPO_PUBLIC_API_URL) ||
-  'https://iot-project-a0ho.onrender.com';
+const API_URL = getApiBaseUrl();
 
 async function getAuthToken() {
   try {
