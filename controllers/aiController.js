@@ -96,7 +96,6 @@ exports.analyzePest = async (req, res) => {
 
     let classifierResp;
     try {
-      // Hugging Face image-classification works reliably with raw image bytes + Content-Type
       classifierResp = await axios.post(HF_CLASSIFIER_URL, imageBuffer, {
         headers: {
           Authorization: `Bearer ${apiKey}`,
@@ -107,10 +106,7 @@ exports.analyzePest = async (req, res) => {
         maxBodyLength: Infinity,
       });
     } catch (e) {
-      if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
-        console.error('HF classifier error:', e.response?.status, e.response?.data || e.message);
-      }
+      console.error('HF classifier error:', e.response?.status, e.response?.data || e.message);
       return res.status(200).json({ success: false, message: 'Analysis failed, please try again' });
     }
 
@@ -122,10 +118,7 @@ exports.analyzePest = async (req, res) => {
       predictions = [clsData];
     }
     if (predictions.length === 0) {
-      if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
-        console.error('HF classifier empty/unexpected response:', clsData);
-      }
+      console.error('HF classifier empty/unexpected response:', clsData);
       return res.status(200).json({ success: false, message: 'Analysis failed, please try again' });
     }
 
@@ -164,10 +157,7 @@ exports.analyzePest = async (req, res) => {
         treatmentText = treatmentResp.data.generated_text || treatmentResp.data.summary_text || '';
       }
     } catch (e) {
-      if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
-        console.error('HF treatment error:', e.response?.status, e.response?.data || e.message);
-      }
+      console.error('HF treatment error:', e.response?.status, e.response?.data || e.message);
       treatmentText = '';
     }
 
