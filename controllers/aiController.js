@@ -210,7 +210,8 @@ exports.analyzePest = async (req, res) => {
 
     return res.status(200).json(responseJson);
   } catch (error) {
-    return res.status(200).json({ success: false, message: 'Analysis failed, please try again' });
+    console.error("HF Error:", error.response?.data || error.message);
+    return res.status(500).json({ success: false, message: "Analysis failed, please try again" });
   }
 };
 
