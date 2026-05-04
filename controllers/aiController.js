@@ -2,8 +2,8 @@ const axios = require('axios');
 const PestAnalysis = require('../models/PestAnalysis');
 
 const HF_CLASSIFIER_URL =
-  'https://api-inference.huggingface.co/models/wambugu71/crop_leaf_diseases_vit';
-const HF_TREATMENT_URL = 'https://api-inference.huggingface.co/models/google/flan-t5-base';
+  'https://router.huggingface.co/hf-inference/models/linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification';
+const HF_TREATMENT_URL = 'https://router.huggingface.co/hf-inference/models/google/flan-t5-base';
 
 function cleanLabel(label) {
   return String(label || '')
