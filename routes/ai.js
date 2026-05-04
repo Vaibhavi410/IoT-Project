@@ -1,11 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { analyzePest, textPrompt } = require('../controllers/aiController');
+const { analyzePest, getHistory, deleteAnalysis } = require('../controllers/aiController');
 
-// Public AI analyze endpoint. If you want to restrict access to authenticated users,
-// replace with `router.post('/analyze', authenticate, analyzePest);` and ensure the
-// frontend includes an Authorization: Bearer <token> header.
-router.post('/analyze', analyzePest);
-router.post('/text', textPrompt);
+router.post('/analyze-pest', analyzePest);
+router.get('/history/:userId', getHistory);
+router.delete('/:id', deleteAnalysis);
 
 module.exports = router;

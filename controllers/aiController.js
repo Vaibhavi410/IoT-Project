@@ -1,179 +1,249 @@
-const fetch = global.fetch || require('node-fetch');
+const axios = require('axios');
+const PestAnalysis = require('../models/PestAnalysis');
 
-const SYSTEM_PROMPT = `You are CropGuard AI, an expert agricultural entomologist and plant pathologist. When given an image (base64) and optional context, respond ONLY with a valid JSON object in the following structure (no extra text):
-{
-  "identified": true,
-  "pestName": "Common name",
-  "scientificName": "Genus species",
-  "confidence": 85,
-  "severity": "Low|Moderate|High|Critical",
-  "category": "Insect|Fungal Disease|Bacterial Disease|Viral Disease|Mite|Nematode|Weed|Other",
-  "affectedCrops": ["Rice","Wheat"],
-  "description": "Short description",
-  "symptoms": ["..."],
-  "organicTreatments": [],
-  "chemicalTreatments": [],
-  "preventionTips": [],
-  "bestTimeToTreat": "",
-  "spreadRisk": "Low|Moderate|High",
-  "economicImpact": ""
+const HF_CLASSIFIER_URL =
+  'https://api-inference.huggingface.co/models/linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification';
+const HF_TREATMENT_URL = 'https://api-inference.huggingface.co/models/google/flan-t5-base';
+
+function cleanLabel(label) {
+  return String(label || '')
+    .replace(/___/g, ' - ')
+    .replace(/_/g, ' ')
+    .trim();
 }
 
-If you cannot identify the pest, respond with:
-{
-  "identified": false,
-  "message": "Reason why identification was not possible",
-  "suggestions": ["Take a clearer photo"]
+function severityFromConfidencePct(confidencePct) {
+  if (confidencePct > 80) return 'Severe';
+  if (confidencePct >= 60) return 'Moderate';
+  return 'Mild';
 }
-`;
 
-// POST /api/ai/analyze
+function severityToDbEnum(severityLevel) {
+  if (severityLevel === 'Severe') return 'high';
+  if (severityLevel === 'Moderate') return 'medium';
+  return 'low';
+}
+
+function parseDataUrlBase64(imageBase64) {
+  const s = String(imageBase64 || '');
+  const m = s.match(/^data:([^;]+);base64,(.+)$/i);
+  if (m) {
+    return { contentType: m[1] || 'image/jpeg', base64: m[2] };
+  }
+  return { contentType: 'image/jpeg', base64: s };
+}
+
+function parseTreatmentText(text) {
+  const raw = String(text || '').trim();
+  if (!raw) {
+    return { organic: '', chemical: '', prevention: '' };
+  }
+
+  const normalized = raw.replace(/\r\n/g, '\n');
+  const organic =
+    normalized.match(/(?:^|\n)\s*(?:1[\).\-\:]\s*)([\s\S]*?)(?=(?:\n\s*2[\).\-\:])|$)/i)?.[1]?.trim() || '';
+  const chemical =
+    normalized.match(/(?:^|\n)\s*(?:2[\).\-\:]\s*)([\s\S]*?)(?=(?:\n\s*3[\).\-\:])|$)/i)?.[1]?.trim() || '';
+  const prevention =
+    normalized.match(/(?:^|\n)\s*(?:3[\).\-\:]\s*)([\s\S]*?)$/i)?.[1]?.trim() || '';
+
+  if (organic || chemical || prevention) {
+    return { organic, chemical, prevention };
+  }
+
+  const lines = normalized
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  return {
+    organic: lines[0] || raw,
+    chemical: lines[1] || '',
+    prevention: lines[2] || '',
+  };
+}
+
+// POST /api/ai/analyze-pest
 exports.analyzePest = async (req, res) => {
   try {
-    const { base64Image, mimeType = 'image/jpeg', additionalContext = '' } = req.body;
+    const { imageBase64, cropType, location } = req.body || {};
 
-    if (!base64Image) {
-      return res.status(400).json({ success: false, message: 'base64Image is required' });
-    }
-
-    if (!process.env.GEMINI_API_KEY || !process.env.GEMINI_API_URL) {
-      return res.status(501).json({
+    if (!imageBase64 || !cropType || !location) {
+      return res.status(400).json({
         success: false,
-        message:
-          'GEMINI_API_KEY or GEMINI_API_URL not configured on the server. Add GEMINI_API_KEY and GEMINI_API_URL to environment variables.',
+        message: 'imageBase64, cropType, and location are required',
       });
     }
 
-    // Build the prompt for Gemini / generative model
-    const prompt = `${SYSTEM_PROMPT}\nContext: ${additionalContext}\nImage (base64): ${base64Image}`;
+    const apiKey = process.env.HUGGINGFACE_API_KEY;
+    if (!apiKey) {
+      return res.status(501).json({
+        success: false,
+        message: 'HUGGINGFACE_API_KEY not configured on the server.',
+      });
+    }
 
-    const payload = {
-      model: process.env.GEMINI_MODEL || 'gemini-1.0',
-      prompt,
-      max_output_tokens: 1500,
+    const { contentType, base64: rawB64 } = parseDataUrlBase64(imageBase64);
+    let imageBuffer;
+    try {
+      imageBuffer = Buffer.from(rawB64, 'base64');
+    } catch (e) {
+      return res.status(200).json({ success: false, message: 'Analysis failed, please try again' });
+    }
+    if (!imageBuffer || imageBuffer.length < 32) {
+      return res.status(200).json({ success: false, message: 'Analysis failed, please try again' });
+    }
+
+    let classifierResp;
+    try {
+      // Hugging Face image-classification works reliably with raw image bytes + Content-Type
+      classifierResp = await axios.post(HF_CLASSIFIER_URL, imageBuffer, {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': contentType,
+        },
+        timeout: 120000,
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
+      });
+    } catch (e) {
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.error('HF classifier error:', e.response?.status, e.response?.data || e.message);
+      }
+      return res.status(200).json({ success: false, message: 'Analysis failed, please try again' });
+    }
+
+    let predictions = [];
+    const clsData = classifierResp?.data;
+    if (Array.isArray(clsData)) {
+      predictions = clsData;
+    } else if (clsData && typeof clsData === 'object' && !clsData.error && clsData.label != null) {
+      predictions = [clsData];
+    }
+    if (predictions.length === 0) {
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.error('HF classifier empty/unexpected response:', clsData);
+      }
+      return res.status(200).json({ success: false, message: 'Analysis failed, please try again' });
+    }
+
+    const sorted = [...predictions].sort((a, b) => (b?.score || 0) - (a?.score || 0));
+    const top3Raw = sorted.slice(0, 3);
+    const top3Predictions = top3Raw.map((p) => ({
+      name: cleanLabel(p?.label),
+      confidence: Math.round((p?.score || 0) * 100),
+    }));
+
+    const pestName = top3Predictions[0]?.name || cleanLabel(top3Raw[0]?.label);
+    const confidencePct = top3Predictions[0]?.confidence ?? Math.round((top3Raw[0]?.score || 0) * 100);
+    const severityLevel = severityFromConfidencePct(confidencePct);
+
+    const prompt = `You are an agricultural expert. Pest detected: ${pestName} on ${cropType} in ${location}. Give a short treatment plan with 3 options: 1) Organic method 2) Chemical method 3) Prevention. Keep it simple for farmers.`;
+
+    let treatmentText = '';
+    try {
+      const treatmentResp = await axios.post(
+        HF_TREATMENT_URL,
+        { inputs: prompt },
+        {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 60000,
+        }
+      );
+
+      if (typeof treatmentResp?.data === 'string') {
+        treatmentText = treatmentResp.data;
+      } else if (Array.isArray(treatmentResp?.data)) {
+        treatmentText = treatmentResp.data[0]?.generated_text || treatmentResp.data[0]?.summary_text || '';
+      } else if (treatmentResp?.data && typeof treatmentResp.data === 'object') {
+        treatmentText = treatmentResp.data.generated_text || treatmentResp.data.summary_text || '';
+      }
+    } catch (e) {
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.error('HF treatment error:', e.response?.status, e.response?.data || e.message);
+      }
+      treatmentText = '';
+    }
+
+    const treatment = parseTreatmentText(treatmentText);
+
+    const responseJson = {
+      success: true,
+      data: {
+        pestName,
+        confidence: confidencePct,
+        severityLevel,
+        cropAffected: cropType,
+        location,
+        top3Predictions,
+        treatment,
+        scanDate: new Date().toISOString(),
+      },
     };
 
-    const response = await fetch(process.env.GEMINI_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.GEMINI_API_KEY}`,
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errText = await response.text().catch(() => 'Unknown error');
-      return res.status(response.status).json({ success: false, message: errText });
-    }
-
-    const data = await response.json().catch(() => null);
-
-    // Try to extract a text result from common response shapes
-    let rawText = null;
-    if (data) {
-      if (data.output && Array.isArray(data.output) && data.output[0]?.content) {
-        const textBlock = data.output[0].content.find((c) => c.type === 'text');
-        rawText = textBlock?.text || null;
+    try {
+      const userId = req.userId || req.body?.userId;
+      if (userId) {
+        await PestAnalysis.create({
+          userId,
+          pestName,
+          confidence: confidencePct,
+          severity: severityToDbEnum(severityLevel),
+          cropType,
+          location,
+          recommendations: [
+            treatment.organic ? `Organic: ${treatment.organic}` : null,
+            treatment.chemical ? `Chemical: ${treatment.chemical}` : null,
+            treatment.prevention ? `Prevention: ${treatment.prevention}` : null,
+          ].filter(Boolean),
+        });
       }
-      rawText = rawText || data.candidates?.[0]?.content?.[0]?.text || data.result || data.text || null;
+    } catch (e) {
+      // If persistence fails, still return the analysis payload.
     }
 
-    // Fallback: try reading text body
-    if (!rawText) {
-      try {
-        const text = await response.text();
-        rawText = text;
-      } catch (e) {
-        rawText = null;
-      }
-    }
-
-    // Try to parse JSON from the model output
-    let parsed = null;
-    if (rawText) {
-      const cleaned = String(rawText).replace(/```json|```/g, '').trim();
-      try {
-        parsed = JSON.parse(cleaned);
-      } catch (e) {
-        return res.status(200).json({ success: true, raw: cleaned });
-      }
-    }
-
-    if (parsed) {
-      return res.status(200).json({ success: true, data: parsed });
-    }
-
-    return res.status(500).json({ success: false, message: 'Unable to parse model output' });
+    return res.status(200).json(responseJson);
   } catch (error) {
-    console.error('AI analyze error:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(200).json({ success: false, message: 'Analysis failed, please try again' });
   }
 };
 
-// POST /api/ai/text - generic text assistant endpoint
-exports.textPrompt = async (req, res) => {
+// GET /api/ai/history/:userId
+exports.getHistory = async (req, res) => {
   try {
-    const { prompt = '' } = req.body;
-
-    if (!prompt || String(prompt).trim().length === 0) {
-      return res.status(400).json({ success: false, message: 'prompt is required' });
+    const { userId } = req.params || {};
+    if (!userId) {
+      return res.status(400).json({ success: false, message: 'userId is required' });
     }
 
-    if (!process.env.GEMINI_API_KEY || !process.env.GEMINI_API_URL) {
-      return res.status(501).json({
-        success: false,
-        message:
-          'GEMINI_API_KEY or GEMINI_API_URL not configured on the server. Add GEMINI_API_KEY and GEMINI_API_URL to environment variables.',
-      });
-    }
-
-    const system = `You are CropGuard Assistant, a helpful agricultural assistant. Answer concisely in the user's language and avoid extra commentary.`;
-    const fullPrompt = `${system}\nUser: ${prompt}`;
-
-    const payload = {
-      model: process.env.GEMINI_MODEL || 'gemini-1.0',
-      prompt: fullPrompt,
-      max_output_tokens: 800,
-    };
-
-    const response = await fetch(process.env.GEMINI_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.GEMINI_API_KEY}`,
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errText = await response.text().catch(() => 'Unknown error');
-      return res.status(response.status).json({ success: false, message: errText });
-    }
-
-    const data = await response.json().catch(() => null);
-
-    let rawText = null;
-    if (data) {
-      if (data.output && Array.isArray(data.output) && data.output[0]?.content) {
-        const textBlock = data.output[0].content.find((c) => c.type === 'text');
-        rawText = textBlock?.text || null;
-      }
-      rawText = rawText || data.candidates?.[0]?.content?.[0]?.text || data.result || data.text || null;
-    }
-
-    if (!rawText) {
-      try {
-        const text = await response.text();
-        rawText = text;
-      } catch (e) {
-        rawText = null;
-      }
-    }
-
-    return res.status(200).json({ success: true, text: rawText || '' });
+    const items = await PestAnalysis.find({ userId }).sort({ createdAt: -1 });
+    return res.status(200).json({ success: true, data: items });
   } catch (error) {
-    console.error('AI text error:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: 'Error fetching history' });
+  }
+};
+
+// DELETE /api/ai/:id
+exports.deleteAnalysis = async (req, res) => {
+  try {
+    const { id } = req.params || {};
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'id is required' });
+    }
+
+    const deleted = await PestAnalysis.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: 'Not found' });
+    }
+
+    return res.status(200).json({ success: true, message: 'Deleted successfully' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Error deleting analysis' });
   }
 };
