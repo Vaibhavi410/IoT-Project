@@ -22,14 +22,14 @@ import { DEFAULT_LANG, LANGUAGE_CATALOG, TRANSLATIONS } from '../../constants/tr
 import { useLanguage } from '../../context/LanguageContext';
 import LanguageSelector from '../../components/LanguageSelector';
 import VoiceWaveform from '../../components/VoiceWaveform';
-import { getDummyVoiceResponse, getSpeechLocale, queryVoiceAssistant } from '../../services/voiceAssistantLogic';
+import { getSpeechLocale, queryVoiceAssistant } from '../../services/voiceAssistantLogic';
 
 /**
  * Voice-first assistant (Pestify)
  *
  * - Tap the big mic: real recording with waveform + timer (max 30s, optional silence auto-stop).
- * - There is no free on-device STT in this demo: farmers type what they said in the box below
- *   (or use quick chips), then "Get advice" runs dummy keyword → Hindi/English answers + TTS.
+ * - Farmers type what they said in the box below (or use quick chips), then "Get advice"
+ *   calls backend AI and reads the response aloud.
  * - "Speaking in" opens the same language sheet but only changes reply/TTS language (onPickOverride).
  */
 
@@ -238,9 +238,7 @@ export default function VoiceAssistantScreen() {
         setRecent((prev) => [{ q, a: ans }, ...prev].slice(0, 3));
         setPhase('response');
       } catch (e) {
-        const ans = getDummyVoiceResponse(q, voiceLang, tv);
-        setResponseText(ans);
-        setRecent((prev) => [{ q, a: ans }, ...prev].slice(0, 3));
+        setResponseText('Unable to get AI response right now. Please try again in a moment.');
         setPhase('response');
       }
     },

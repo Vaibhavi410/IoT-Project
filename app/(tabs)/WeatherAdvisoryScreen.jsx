@@ -6,57 +6,12 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors as COLORS } from '../../constants/theme';
-
-const CITY = 'Pune, Maharashtra';
-
-const CURRENT_WEATHER = {
-  temperatureC: 32,
-  humidityPct: 85,
-  rainfallMm: 12,
-  windKmh: 18,
-  condition: 'Partly Cloudy',
-};
-
-const PEST_RISKS = [
-  {
-    name: 'Whitefly',
-    level: 'HIGH',
-    colorKey: 'danger',
-    reason: 'High humidity favors rapid spread',
-  },
-  {
-    name: 'Aphids',
-    level: 'MEDIUM',
-    colorKey: 'warning',
-    reason: 'Warm, muggy conditions boost reproduction',
-  },
-  {
-    name: 'Fungal Blight',
-    level: 'HIGH',
-    colorKey: 'danger',
-    reason: 'Moist foliage + incoming rain ideal for spores',
-  },
-];
-
-const FORECAST_DAYS = [
-  { id: 'd0', label: 'Today', emoji: '⛅', tempC: 32, humidityPct: 85 },
-  { id: 'd1', label: 'Tomorrow', emoji: '🌤️', tempC: 31, humidityPct: 78 },
-  { id: 'd2', label: 'Wed', emoji: '🌧️', tempC: 29, humidityPct: 82 },
-  { id: 'd3', label: 'Thu', emoji: '☀️', tempC: 33, humidityPct: 65 },
-  { id: 'd4', label: 'Fri', emoji: '⛈️', tempC: 28, humidityPct: 88 },
-];
-
-const PRECAUTIONS = [
-  'Apply fungicide before expected rainfall',
-  'Scout for whitefly early morning',
-  'Avoid chemical spray — wind speed too high',
-];
-
-const ADVISORY_HIGH_RISK = true;
+import { getAdvice } from '../../services/pestAnalysis';
 
 function goBackCompat(navigation) {
   if (navigation.canGoBack()) {
@@ -87,7 +42,13 @@ function formatDateTime(d) {
 export default function WeatherAdvisoryScreen() {
   const navigation = useNavigation();
   const [now, setNow] = useState(() => new Date());
+  const [crop, setCrop] = useState('Tomato');
+  const [latitude, setLatitude] = useState('18.5204');
+  const [longitude, setLongitude] = useState('73.8567');
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [advice, setAdvice] = useState(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
@@ -95,16 +56,28 @@ export default function WeatherAdvisoryScreen() {
   }, []);
 
   const onRefresh = useCallback(() => {
+    loadAdvice();
+  }, [crop, latitude, longitude]);
+
+  async function loadAdvice() {
     setRefreshing(true);
+    setLoading(true);
+    setError('');
     setNow(new Date());
-    setTimeout(() => setRefreshing(false), 800);
+    const data = await getAdvice(crop.trim() || 'crop', latitude.trim(), longitude.trim());
+    if (!data) {
+      setError('Unable to fetch weather advisory right now.');
+      setAdvice(null);
+    } else {
+      setAdvice(data);
+    }
+    setRefreshing(false);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    loadAdvice();
   }, []);
-
-  const riskBadgeStyle = (colorKey) =>
-    colorKey === 'danger' ? styles.badgeHigh : styles.badgeMedium;
-
-  const riskBadgeTextStyle = (colorKey) =>
-    colorKey === 'danger' ? styles.badgeTextHigh : styles.badgeTextMedium;
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
@@ -125,8 +98,31 @@ export default function WeatherAdvisoryScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.locationCard}>
-          <Text style={styles.cityTitle}>{CITY}</Text>
+          <Text style={styles.cityTitle}>Weather Advisory</Text>
           <Text style={styles.dateTime}>{formatDateTime(now)}</Text>
+          <TextInput
+            style={styles.input}
+            value={crop}
+            onChangeText={setCrop}
+            placeholder="Crop (e.g. Tomato)"
+            placeholderTextColor="#7B8F7B"
+          />
+          <View style={styles.coordsRow}>
+            <TextInput
+              style={[styles.input, styles.coordInput]}
+              value={latitude}
+              onChangeText={setLatitude}
+              placeholder="Latitude"
+              placeholderTextColor="#7B8F7B"
+            />
+            <TextInput
+              style={[styles.input, styles.coordInput]}
+              value={longitude}
+              onChangeText={setLongitude}
+              placeholder="Longitude"
+              placeholderTextColor="#7B8F7B"
+            />
+          </View>
           <Pressable
             style={styles.refreshBtn}
             onPress={onRefresh}
@@ -140,99 +136,38 @@ export default function WeatherAdvisoryScreen() {
           </Pressable>
         </View>
 
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Current conditions</Text>
-          <Text style={styles.conditionMain}>⛅ {CURRENT_WEATHER.condition}</Text>
-          <View style={styles.statsGrid}>
-            <View style={styles.statCell}>
-              <Text style={styles.statEmoji}>🌡️</Text>
-              <Text style={styles.statLabel}>Temperature</Text>
-              <Text style={styles.statValue}>{CURRENT_WEATHER.temperatureC}°C</Text>
-            </View>
-            <View style={styles.statCell}>
-              <Text style={styles.statEmoji}>💧</Text>
-              <Text style={styles.statLabel}>Humidity</Text>
-              <Text style={styles.statValue}>{CURRENT_WEATHER.humidityPct}%</Text>
-            </View>
-            <View style={styles.statCell}>
-              <Text style={styles.statEmoji}>🌧️</Text>
-              <Text style={styles.statLabel}>Rainfall</Text>
-              <Text style={styles.statValue}>{CURRENT_WEATHER.rainfallMm} mm</Text>
-            </View>
-            <View style={styles.statCell}>
-              <Text style={styles.statEmoji}>💨</Text>
-              <Text style={styles.statLabel}>Wind</Text>
-              <Text style={styles.statValue}>{CURRENT_WEATHER.windKmh} km/h</Text>
-            </View>
+        {loading ? (
+          <View style={styles.sectionCard}>
+            <ActivityIndicator color={COLORS.primary} />
+            <Text style={styles.emptyText}>Loading advisory...</Text>
           </View>
-        </View>
+        ) : null}
+        {!loading && error ? (
+          <View style={styles.sectionCard}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : null}
 
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Pest Risk Forecast</Text>
-          {PEST_RISKS.map((p, idx) => (
-            <View key={p.name} style={[styles.pestRow, idx === 0 && styles.pestRowFirst]}>
-              <View style={styles.pestRowTop}>
-                <Text style={styles.pestName}>{p.name}</Text>
-                <View style={[styles.riskBadge, riskBadgeStyle(p.colorKey)]}>
-                  <Text style={[styles.riskBadgeText, riskBadgeTextStyle(p.colorKey)]}>
-                    {p.level}
-                  </Text>
-                </View>
+        {!loading && advice?.weather ? (
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Current conditions</Text>
+            <Text style={styles.statValue}>Temperature: {advice.weather.temperature_2m}°C</Text>
+            <Text style={styles.statValue}>Precipitation: {advice.weather.precipitation} mm</Text>
+            <Text style={styles.statValue}>Weather code: {advice.weather.weathercode}</Text>
+          </View>
+        ) : null}
+
+        {!loading && advice?.tips?.length ? (
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>AI crop advice</Text>
+            {advice.tips.map((tip, i) => (
+              <View key={`${tip}-${i}`} style={styles.bulletRow}>
+                <Text style={styles.bullet}>•</Text>
+                <Text style={styles.bulletText}>{tip}</Text>
               </View>
-              <Text style={styles.pestReason}>{p.reason}</Text>
-            </View>
-          ))}
-        </View>
-
-        <Text style={styles.stripHeading}>5-Day outlook</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.forecastStrip}
-        >
-          {FORECAST_DAYS.map((day) => {
-            const humidAlert = day.humidityPct > 80;
-            return (
-              <View
-                key={day.id}
-                style={[styles.dayCard, humidAlert && styles.dayCardHumid]}
-              >
-                <Text style={styles.dayLabel}>{day.label}</Text>
-                <Text style={styles.dayEmoji}>{day.emoji}</Text>
-                <Text style={styles.dayTemp}>{day.tempC}°C</Text>
-                <Text style={styles.dayHumid}>{day.humidityPct}% RH</Text>
-              </View>
-            );
-          })}
-        </ScrollView>
-
-        <View
-          style={[
-            styles.advisoryBanner,
-            ADVISORY_HIGH_RISK ? styles.advisoryDanger : styles.advisorySafe,
-          ]}
-        >
-          <Text
-            style={[
-              styles.advisoryText,
-              ADVISORY_HIGH_RISK ? styles.advisoryTextDanger : styles.advisoryTextSafe,
-            ]}
-          >
-            {ADVISORY_HIGH_RISK
-              ? '⚠️ Avoid spraying — high wind and rain expected'
-              : '✅ Conditions are safe for spraying today'}
-          </Text>
-        </View>
-
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>{"Today's Precautions"}</Text>
-          {PRECAUTIONS.map((tip, i) => (
-            <View key={i} style={styles.bulletRow}>
-              <Text style={styles.bullet}>•</Text>
-              <Text style={styles.bulletText}>{tip}</Text>
-            </View>
-          ))}
-        </View>
+            ))}
+          </View>
+        ) : null}
 
         <View style={{ height: 24 }} />
       </ScrollView>
@@ -297,6 +232,18 @@ const styles = StyleSheet.create({
     color: COLORS.gray,
     marginBottom: 12,
   },
+  input: {
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#C6D8BF',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    color: COLORS.text,
+    backgroundColor: COLORS.white,
+  },
+  coordsRow: { flexDirection: 'row', gap: 8 },
+  coordInput: { flex: 1 },
   refreshBtn: {
     alignSelf: 'flex-start',
     backgroundColor: COLORS.primary,
@@ -326,164 +273,10 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     marginBottom: 12,
   },
-  conditionMain: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#37474F',
-    marginBottom: 14,
-    textAlign: 'center',
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    justifyContent: 'space-between',
-  },
-  statCell: {
-    width: '47%',
-    backgroundColor: COLORS.background,
-    borderRadius: 12,
-    padding: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E0EDD8',
-  },
-  statEmoji: {
-    fontSize: 28,
-    marginBottom: 6,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: COLORS.gray,
-    marginBottom: 4,
-  },
   statValue: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.text,
-  },
-  pestRow: {
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#EEF5EA',
-  },
-  pestRowFirst: {
-    borderTopWidth: 0,
-    paddingTop: 0,
-  },
-  pestRowTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  pestName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.text,
-    flex: 1,
-  },
-  riskBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  badgeHigh: {
-    backgroundColor: COLORS.danger + '22',
-    borderWidth: 1,
-    borderColor: COLORS.danger,
-  },
-  badgeMedium: {
-    backgroundColor: COLORS.warning + '22',
-    borderWidth: 1,
-    borderColor: COLORS.warning,
-  },
-  riskBadgeText: {
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  badgeTextHigh: {
-    color: COLORS.danger,
-  },
-  badgeTextMedium: {
-    color: COLORS.warning,
-  },
-  pestReason: {
-    fontSize: 13,
-    color: COLORS.gray,
-    lineHeight: 18,
-  },
-  stripHeading: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: COLORS.text,
-    marginBottom: 10,
-  },
-  forecastStrip: {
-    paddingBottom: 14,
-    gap: 10,
-    paddingRight: 8,
-  },
-  dayCard: {
-    width: 104,
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    padding: 12,
-    marginRight: 10,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#E0EDD8',
-  },
-  dayCardHumid: {
-    borderColor: COLORS.warning,
-  },
-  dayLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.text,
-    marginBottom: 6,
-  },
-  dayEmoji: {
-    fontSize: 28,
-    marginBottom: 6,
-  },
-  dayTemp: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.text,
-  },
-  dayHumid: {
-    fontSize: 11,
-    color: COLORS.gray,
-    marginTop: 4,
-  },
-  advisoryBanner: {
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 14,
-  },
-  advisorySafe: {
-    backgroundColor: COLORS.primary + '33',
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-  },
-  advisoryDanger: {
-    backgroundColor: COLORS.danger + '22',
-    borderWidth: 1,
-    borderColor: COLORS.danger,
-  },
-  advisoryText: {
     fontSize: 14,
-    fontWeight: '700',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  advisoryTextDanger: {
-    color: COLORS.danger,
-  },
-  advisoryTextSafe: {
-    color: COLORS.primary,
+    color: COLORS.text,
+    marginBottom: 6,
   },
   bulletRow: {
     flexDirection: 'row',
@@ -503,4 +296,6 @@ const styles = StyleSheet.create({
     color: '#37474F',
     lineHeight: 20,
   },
+  emptyText: { marginTop: 10, textAlign: 'center', color: COLORS.gray },
+  errorText: { textAlign: 'center', color: COLORS.danger, fontWeight: '700' },
 });

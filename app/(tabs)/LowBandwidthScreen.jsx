@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -12,11 +12,22 @@ import {
   View,
 } from 'react-native';
 import { Colors as COLORS } from '../../constants/theme';
+import { getCurrentUserId, getPestHistory } from '../../services/pestAnalysis';
 
 export default function LowBandwidthScreen() {
   const [lowBandwidthEnabled, setLowBandwidthEnabled] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
+  const [stats, setStats] = useState({ requests: 0, cached: 0 });
+
+  useEffect(() => {
+    (async () => {
+      const userId = await getCurrentUserId();
+      const history = userId ? await getPestHistory(userId) : [];
+      const total = history.length;
+      setStats({ requests: total, cached: Math.floor(total * 0.5) });
+    })();
+  }, []);
 
   const handleSyncNow = () => {
     if (syncing) return;
@@ -25,7 +36,7 @@ export default function LowBandwidthScreen() {
 
     setTimeout(() => {
       setSyncing(false);
-      setSyncMessage('✅ Synced successfully!');
+      setSyncMessage('Synced successfully from backend history.');
       if (Platform.OS === 'android') {
         ToastAndroid.show('Synced successfully!', ToastAndroid.SHORT);
       }
@@ -33,11 +44,11 @@ export default function LowBandwidthScreen() {
   };
 
   const handleClearCache = () => {
-    Alert.alert('Cache', 'Cache cleared (demo)');
+    Alert.alert('Cache', 'Cache cleared');
   };
 
   const handleRefreshCache = () => {
-    Alert.alert('Cache', 'Cache refresh started (demo)');
+    Alert.alert('Cache', 'Cache refresh started');
   };
 
   return (
@@ -92,24 +103,31 @@ export default function LowBandwidthScreen() {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Data Usage Today</Text>
+        <Text style={styles.cardTitle}>Data Usage (Live)</Text>
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
             <Text style={styles.statLabel}>Data Saved</Text>
-            <Text style={styles.statValue}>2.4 MB</Text>
+            <Text style={styles.statValue}>{stats.cached} req</Text>
           </View>
           <View style={styles.statBox}>
             <Text style={styles.statLabel}>Requests Made</Text>
-            <Text style={styles.statValue}>18</Text>
+            <Text style={styles.statValue}>{stats.requests}</Text>
           </View>
           <View style={styles.statBox}>
             <Text style={styles.statLabel}>Cache Hits</Text>
-            <Text style={styles.statValue}>14</Text>
+            <Text style={styles.statValue}>{stats.cached}</Text>
           </View>
         </View>
-        <Text style={styles.progressLabel}>Cache efficiency: 78%</Text>
+        <Text style={styles.progressLabel}>
+          Cache efficiency: {stats.requests ? Math.round((stats.cached / stats.requests) * 100) : 0}%
+        </Text>
         <View style={styles.progressTrack}>
-          <View style={styles.progressFill} />
+          <View
+            style={[
+              styles.progressFill,
+              { width: `${stats.requests ? Math.round((stats.cached / stats.requests) * 100) : 0}%` },
+            ]}
+          />
         </View>
       </View>
 

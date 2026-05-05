@@ -25,12 +25,15 @@ import {
 } from "../constants/theme";
 import { useLanguage } from "../context/LanguageContext";
 import { formatTimestamp, getScanHistory } from "../services/historyStorage";
+import { getAdvice, getAiStats, getCurrentUserId, getPestHistory } from "../services/pestAnalysis";
 
 const pestifyLogo = require("../assets/images/pestify-logo-mark.png");
 
 export default function HomeScreen({ navigation }) {
   const { t } = useLanguage();
   const [recentScans, setRecentScans] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [adviceTips, setAdviceTips] = useState([]);
   const [tipIndex, setTipIndex] = useState(0);
   const [langOpen, setLangOpen] = useState(false);
   const handleSignOut = () => {
@@ -56,8 +59,8 @@ export default function HomeScreen({ navigation }) {
     ]);
   };
   const tips = useMemo(
-    () => [t("tip_0"), t("tip_1"), t("tip_2"), t("tip_3"), t("tip_4")],
-    [t],
+    () => (adviceTips.length ? adviceTips : [t("tip_0"), t("tip_1"), t("tip_2"), t("tip_3"), t("tip_4")]),
+    [t, adviceTips],
   );
 
   useFocusEffect(
@@ -75,8 +78,31 @@ export default function HomeScreen({ navigation }) {
   }, [tips.length]);
 
   async function loadHistory() {
-    const history = await getScanHistory();
-    setRecentScans(history.slice(0, 4));
+    const userId = await getCurrentUserId();
+    if (userId) {
+      const [historyRemote, statData] = await Promise.all([
+        getPestHistory(userId),
+        getAiStats(userId),
+      ]);
+      setRecentScans((historyRemote || []).slice(0, 4).map((scan) => ({
+        id: scan._id,
+        timestamp: scan.createdAt,
+        imageUri: scan.imageUrl || null,
+        result: {
+          identified: true,
+          pestName: scan.pestName,
+          confidence: scan.confidence,
+          severity: scan.severity === "high" ? "High" : scan.severity === "medium" ? "Moderate" : "Low",
+        },
+      })));
+      setStats(statData);
+    } else {
+      const history = await getScanHistory();
+      setRecentScans(history.slice(0, 4));
+    }
+
+    const advice = await getAdvice("tomato");
+    setAdviceTips(advice?.tips?.slice(0, 5) || []);
   }
 
   function handleComingSoon() {
@@ -175,10 +201,18 @@ export default function HomeScreen({ navigation }) {
           <StatCard
             icon="🔍"
             label={t("total_scans")}
-            value={recentScans.length > 0 ? t("active") : "0"}
+            value={String(stats?.totalScans ?? recentScans.length ?? 0)}
           />
-          <StatCard icon="🌾" label={t("crops_protected")} value="∞" />
-          <StatCard icon="⚡" label={t("ai_speed")} value="~5s" />
+          <StatCard
+            icon="🌾"
+            label={t("crops_protected")}
+            value={String(stats?.diseaseCounts?.length ?? 0)}
+          />
+          <StatCard
+            icon="⚡"
+            label={t("ai_speed")}
+            value={String((stats?.severityBreakdown?.severe ?? 0) + (stats?.severityBreakdown?.moderate ?? 0))}
+          />
         </View>
 
         {/* Section 2: Treatment & Protocol */}

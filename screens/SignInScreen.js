@@ -146,6 +146,9 @@ export default function SignInScreen({ navigation }) {
           if (data?.token) {
             await AsyncStorage.setItem('pestify_token', data.token);
           }
+          if (data?.user?.id) {
+            await AsyncStorage.setItem('pestify_user_id', String(data.user.id));
+          }
         } catch (e) {
           console.warn('Backend auth exchange failed', e);
         }

@@ -1,35 +1,15 @@
 import { useNavigation } from '@react-navigation/native';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors as COLORS } from '../../constants/theme';
-import { getScanHistory as getLocalScanHistory, getScanHistoryRemote, saveScanResultRemote } from '../../services/historyStorage';
-
-const FIELDS = [
-  { id: 'A', label: 'Field A' },
-  { id: 'B', label: 'Field B' },
-  { id: 'C', label: 'Field C' },
-];
-
-const FILTER_OPTIONS = ['All', 'Resolved', 'Ongoing'];
-
-const CROP_OPTIONS = ['Wheat', 'Rice', 'Tomato', 'Cotton'];
-
-const SEVERITY_ORDER = ['Low', 'Medium', 'High', 'Critical'];
-
-// runtime-loaded recent scans (remote first, fallback to local)
-const DUMMY_ENTRIES = [];
+import { getCurrentUserId, getPestHistory } from '../../services/pestAnalysis';
 
 function goBackCompat(navigation) {
   if (navigation.canGoBack()) {
@@ -61,119 +41,24 @@ function severityColors(sev) {
 
 export default function PestTimelineScreen() {
   const navigation = useNavigation();
-  const [selectedField, setSelectedField] = useState('A');
-  const [filterStatus, setFilterStatus] = useState('All');
-  const [modalOpen, setModalOpen] = useState(false);
-  const [formPest, setFormPest] = useState('');
-  const [formSeverity, setFormSeverity] = useState('Medium');
-  const [formCrop, setFormCrop] = useState('Tomato');
-  const [formTreatment, setFormTreatment] = useState('');
-  const [recentScans, setRecentScans] = useState([]);
+  const [entries, setEntries] = useState([]);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
-      try {
-        const remote = await getScanHistoryRemote();
-        if (remote && remote.length) {
-          if (!mounted) return;
-          const mapped = remote.map((r) => ({
-            id: r._id || r.id,
-            fieldId: r.fieldId || 'A',
-            dateLabel: new Date(r.createdAt || r.updatedAt || r.timestamp).toLocaleDateString(),
-            pestName: r.pestName || (r.result && r.result.pestName) || 'Scan',
-            emoji: '🐛',
-            severity: r.severity || (r.result && r.result.severity) || 'Medium',
-            crop: r.cropType || (r.result && r.result.affectedCrops && r.result.affectedCrops[0]) || '',
-            treatment: (r.recommendations && r.recommendations[0]) || (r.result && r.result.recommendations && r.result.recommendations[0]) || '',
-            status: r.status || 'new',
-          }));
-          setRecentScans(mapped);
-          return;
-        }
-      } catch (e) {
-        // ignore
-      }
-
-      const local = await getLocalScanHistory();
-      if (!mounted) return;
-      const lm = (local || []).map((l) => ({
-        id: l.id,
-        fieldId: 'A',
-        dateLabel: new Date(l.timestamp).toLocaleDateString(),
-        pestName: l.result?.pestName || 'Scan',
-        emoji: '🐞',
-        severity: l.result?.severity || 'Medium',
-        crop: l.result?.cropType || (l.result?.affectedCrops?.[0]) || '',
-        treatment: l.result?.recommendations?.[0] || '',
-        status: l.result?.status || 'local',
-      }));
-      setRecentScans(lm);
+      const userId = await getCurrentUserId();
+      if (!userId) return;
+      const scans = await getPestHistory(userId);
+      if (mounted) setEntries(scans || []);
     })();
     return () => {
       mounted = false;
     };
   }, []);
 
-  const GLOBAL_SUMMARY = useMemo(() => {
-    const total = (recentScans || []).length;
-    const resolved = (recentScans || []).filter((r) => String(r.status).toLowerCase() === 'resolved').length;
-    const ongoing = total - resolved;
-    const counts = {};
-    (recentScans || []).forEach((r) => {
-      const name = r.pestName || 'Unknown';
-      counts[name] = (counts[name] || 0) + 1;
-    });
-    const mostCommonPest = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || '—';
-    return { totalScans: total, resolved, ongoing, mostCommonPest };
-  }, [recentScans]);
-
-  const filtered = useMemo(() => {
-    return (recentScans || []).filter((e) => {
-      if (e.fieldId && e.fieldId !== selectedField) return false;
-      if (filterStatus === 'All') return true;
-      return String(e.status).toLowerCase() === String(filterStatus).toLowerCase();
-    });
-  }, [selectedField, filterStatus, recentScans]);
-
-  const openModal = () => {
-    setFormPest('');
-    setFormSeverity('Medium');
-    setFormCrop('Tomato');
-    setFormTreatment('');
-    setModalOpen(true);
-  };
-
-  const saveEntry = () => {
-    setModalOpen(false);
-    const newEntry = {
-      id: Date.now().toString(),
-      fieldId: selectedField,
-      dateLabel: new Date().toLocaleDateString(),
-      pestName: formPest || 'Unknown',
-      emoji: '🐞',
-      severity: formSeverity,
-      crop: formCrop,
-      treatment: formTreatment,
-      status: 'new',
-    };
-    setRecentScans((p) => [newEntry, ...(p || [])]);
-
-    // Try to save remotely (non-blocking)
-    try {
-      saveScanResultRemote(null, {
-        pestName: newEntry.pestName,
-        confidence: null,
-        severity: newEntry.severity,
-        cropType: newEntry.crop,
-        imageUrl: null,
-        recommendations: newEntry.treatment ? [newEntry.treatment] : [],
-        notes: '',
-      }).catch(() => {});
-    } catch (e) {
-      // ignore
-    }
-  };
+  const total = entries.length;
+  const resolved = entries.filter((r) => String(r.status).toLowerCase() === 'resolved').length;
+  const ongoing = total - resolved;
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
@@ -194,84 +79,44 @@ export default function PestTimelineScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.pageTitle}>Pest Timeline Tracker</Text>
-        <Text style={styles.pageSubtitle}>Track pest activity on your farm over time</Text>
-
-        <Text style={styles.sectionLabel}>Field</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.fieldChipsRow}
-        >
-          {FIELDS.map((f) => {
-            const on = f.id === selectedField;
-            return (
-              <Pressable
-                key={f.id}
-                onPress={() => setSelectedField(f.id)}
-                style={[styles.fieldChip, on && styles.fieldChipOn]}
-              >
-                <Text style={[styles.fieldChipText, on && styles.fieldChipTextOn]}>{f.label}</Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+        <Text style={styles.pageSubtitle}>Live timeline from your backend scan history</Text>
 
         <View style={styles.statsRow}>
           <View style={styles.statCell}>
-            <Text style={styles.statVal}>{GLOBAL_SUMMARY.totalScans}</Text>
+            <Text style={styles.statVal}>{total}</Text>
             <Text style={styles.statLab}>Total Scans</Text>
           </View>
           <View style={styles.statCell}>
-            <Text style={styles.statVal}>{GLOBAL_SUMMARY.resolved}</Text>
+            <Text style={styles.statVal}>{resolved}</Text>
             <Text style={styles.statLab}>Resolved</Text>
           </View>
           <View style={styles.statCell}>
-            <Text style={styles.statVal}>{GLOBAL_SUMMARY.ongoing}</Text>
+            <Text style={styles.statVal}>{ongoing}</Text>
             <Text style={styles.statLab}>Ongoing</Text>
           </View>
-          <View style={[styles.statCell, styles.statCellWide]}>
-            <Text style={styles.statValSmall} numberOfLines={1}>
-              {GLOBAL_SUMMARY.mostCommonPest}
-            </Text>
-            <Text style={styles.statLab}>Most Common Pest</Text>
-          </View>
-        </View>
-
-        <Text style={styles.sectionLabel}>Filter</Text>
-        <View style={styles.filterRow}>
-          {FILTER_OPTIONS.map((opt) => {
-            const on = filterStatus === opt;
-            return (
-              <Pressable
-                key={opt}
-                onPress={() => setFilterStatus(opt)}
-                style={[styles.filterChip, on && styles.filterChipOn]}
-              >
-                <Text style={[styles.filterChipText, on && styles.filterChipTextOn]}>{opt}</Text>
-              </Pressable>
-            );
-          })}
         </View>
 
         <Text style={styles.sectionLabel}>Timeline</Text>
         <View style={styles.timelineBlock}>
-          {filtered.length === 0 ? (
-            <Text style={styles.emptyText}>No events for this field and filter.</Text>
+          {entries.length === 0 ? (
+            <Text style={styles.emptyText}>No backend entries found.</Text>
           ) : (
-            filtered.map((ev, index) => {
+            entries.map((ev, index) => {
               const sev = severityColors(ev.severity);
-              const last = index === filtered.length - 1;
+              const last = index === entries.length - 1;
               return (
-                <View key={ev.id} style={styles.timelineRow}>
+                <View key={ev._id || index} style={styles.timelineRow}>
                   <View style={styles.rail}>
                     <View style={[styles.railDot, { borderColor: COLORS.primary }]} />
                     {!last && <View style={styles.railLine} />}
                   </View>
                   <View style={styles.card}>
-                    <Text style={styles.cardDate}>{ev.dateLabel}</Text>
+                    <Text style={styles.cardDate}>
+                      {new Date(ev.createdAt || ev.updatedAt).toLocaleDateString()}
+                    </Text>
                     <View style={styles.cardTitleRow}>
                       <Text style={styles.cardPestTitle}>
-                        {ev.emoji} {ev.pestName}
+                        🐛 {ev.pestName}
                       </Text>
                       <View style={[styles.sevBadge, { borderColor: sev.border, backgroundColor: sev.bg }]}>
                         <Text style={[styles.sevBadgeText, { color: sev.text }]}>{ev.severity}</Text>
@@ -279,25 +124,29 @@ export default function PestTimelineScreen() {
                     </View>
                     <Text style={styles.cardMeta}>
                       <Text style={styles.cardMetaBold}>Crop: </Text>
-                      {ev.crop}
+                      {ev.cropType || '-'}
                     </Text>
                     <Text style={styles.cardMeta}>
                       <Text style={styles.cardMetaBold}>Treatment: </Text>
-                      {ev.treatment}
+                      {(ev.recommendations || []).join(', ') || '-'}
                     </Text>
                     <View
                       style={[
                         styles.statusBadge,
-                        ev.status === 'Resolved' ? styles.statusResolved : styles.statusOngoing,
+                        String(ev.status).toLowerCase() === 'resolved'
+                          ? styles.statusResolved
+                          : styles.statusOngoing,
                       ]}
                     >
                       <Text
                         style={[
                           styles.statusBadgeText,
-                          ev.status === 'Resolved' ? styles.statusResolvedText : styles.statusOngoingText,
+                          String(ev.status).toLowerCase() === 'resolved'
+                            ? styles.statusResolvedText
+                            : styles.statusOngoingText,
                         ]}
                       >
-                        {ev.status === 'Resolved' ? 'Resolved ✅' : 'Ongoing 🔴'}
+                        {String(ev.status).toLowerCase() === 'resolved' ? 'Resolved ✅' : 'Ongoing 🔴'}
                       </Text>
                     </View>
                   </View>
@@ -310,76 +159,6 @@ export default function PestTimelineScreen() {
         <View style={{ height: 88 }} />
       </ScrollView>
 
-      <TouchableOpacity style={styles.fab} onPress={openModal} activeOpacity={0.85}>
-        <Text style={styles.fabPlus}>+</Text>
-      </TouchableOpacity>
-
-      <Modal visible={modalOpen} transparent animationType="fade">
-        <KeyboardAvoidingView
-          style={styles.modalOverlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-          <Pressable style={styles.modalBackdrop} onPress={() => setModalOpen(false)} />
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>New pest entry</Text>
-
-            <Text style={styles.modalLabel}>Pest name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. Whitefly"
-              placeholderTextColor={COLORS.gray}
-              value={formPest}
-              onChangeText={setFormPest}
-            />
-
-            <Text style={styles.modalLabel}>Severity</Text>
-            <View style={styles.chipWrap}>
-              {SEVERITY_ORDER.map((s) => (
-                <Pressable
-                  key={s}
-                  onPress={() => setFormSeverity(s)}
-                  style={[styles.modalChip, formSeverity === s && styles.modalChipOn]}
-                >
-                  <Text style={[styles.modalChipText, formSeverity === s && styles.modalChipTextOn]}>
-                    {s}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-
-            <Text style={styles.modalLabel}>Crop</Text>
-            <View style={styles.chipWrap}>
-              {CROP_OPTIONS.map((c) => (
-                <Pressable
-                  key={c}
-                  onPress={() => setFormCrop(c)}
-                  style={[styles.modalChip, formCrop === c && styles.modalChipOn]}
-                >
-                  <Text style={[styles.modalChipText, formCrop === c && styles.modalChipTextOn]}>{c}</Text>
-                </Pressable>
-              ))}
-            </View>
-
-            <Text style={styles.modalLabel}>Treatment applied</Text>
-            <TextInput
-              style={[styles.input, styles.inputMultiline]}
-              placeholder="Describe treatment"
-              placeholderTextColor={COLORS.gray}
-              value={formTreatment}
-              onChangeText={setFormTreatment}
-              multiline
-            />
-
-            <TouchableOpacity style={styles.saveBtn} onPress={saveEntry} activeOpacity={0.85}>
-              <Text style={styles.saveBtnText}>Save Entry</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalOpen(false)}>
-              <Text style={styles.cancelBtnText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -445,31 +224,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 4,
   },
-  fieldChipsRow: {
-    paddingVertical: 4,
-    gap: 8,
-    paddingRight: 8,
-  },
-  fieldChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#C6D8BF',
-    backgroundColor: COLORS.white,
-    marginRight: 8,
-  },
-  fieldChipOn: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  fieldChipText: {
-    fontWeight: '600',
-    color: '#2F4F2F',
-  },
-  fieldChipTextOn: {
-    color: COLORS.white,
-  },
   statsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -487,52 +241,16 @@ const styles = StyleSheet.create({
     borderColor: '#DCE8D5',
     alignItems: 'center',
   },
-  statCellWide: {
-    minWidth: '100%',
-    alignItems: 'center',
-  },
   statVal: {
     fontSize: 20,
     fontWeight: '800',
     color: COLORS.text,
-  },
-  statValSmall: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: COLORS.primary,
-    textAlign: 'center',
   },
   statLab: {
     fontSize: 11,
     color: COLORS.gray,
     marginTop: 4,
     textAlign: 'center',
-  },
-  filterRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 8,
-  },
-  filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#C6D8BF',
-    backgroundColor: COLORS.white,
-  },
-  filterChipOn: {
-    backgroundColor: COLORS.primary + '33',
-    borderColor: COLORS.primary,
-  },
-  filterChipText: {
-    fontWeight: '600',
-    color: COLORS.text,
-    fontSize: 13,
-  },
-  filterChipTextOn: {
-    color: COLORS.primary,
   },
   timelineBlock: {
     marginTop: 8,
@@ -642,116 +360,5 @@ const styles = StyleSheet.create({
   },
   statusOngoingText: {
     color: COLORS.danger,
-  },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
-  fabPlus: {
-    color: COLORS.white,
-    fontSize: 32,
-    fontWeight: '300',
-    marginTop: -2,
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  modalBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-  },
-  modalSheet: {
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    padding: 20,
-    paddingBottom: 28,
-    maxHeight: '92%',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: COLORS.text,
-    marginBottom: 16,
-  },
-  modalLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.gray,
-    marginBottom: 6,
-    marginTop: 10,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#DCE8D5',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 15,
-    color: COLORS.text,
-    backgroundColor: COLORS.background,
-  },
-  inputMultiline: {
-    minHeight: 72,
-    textAlignVertical: 'top',
-  },
-  chipWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  modalChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#C6D8BF',
-    backgroundColor: COLORS.white,
-  },
-  modalChipOn: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  modalChipText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  modalChipTextOn: {
-    color: COLORS.white,
-  },
-  saveBtn: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  saveBtnText: {
-    color: COLORS.white,
-    fontWeight: '800',
-    fontSize: 16,
-  },
-  cancelBtn: {
-    alignItems: 'center',
-    paddingVertical: 14,
-  },
-  cancelBtnText: {
-    color: COLORS.gray,
-    fontWeight: '600',
-    fontSize: 15,
   },
 });

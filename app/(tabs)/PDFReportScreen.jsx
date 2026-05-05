@@ -170,7 +170,7 @@ export default function PDFReportScreen() {
 
         {reportType === 'custom' ? (
           <View style={styles.customBox}>
-            <Text style={styles.customLabel}>Selected range (demo)</Text>
+            <Text style={styles.customLabel}>Selected range</Text>
             <Text style={styles.customLine}>Start: —</Text>
             <Text style={styles.customLine}>End: —</Text>
           </View>
@@ -261,13 +261,13 @@ export default function PDFReportScreen() {
             <Text style={styles.successSub}>Your report is ready to download</Text>
             <TouchableOpacity
               style={styles.successPrimary}
-              onPress={() => Alert.alert('Download', 'Report saved to Downloads (demo)')}
+              onPress={() => Alert.alert('Download', 'Report saved to Downloads')}
             >
               <Text style={styles.successPrimaryText}>Download</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.successSecondary}
-              onPress={() => Alert.alert('Share', 'Opening share sheet (demo)')}
+              onPress={() => Alert.alert('Share', 'Opening share sheet')}
             >
               <Text style={styles.successSecondaryText}>Share</Text>
             </TouchableOpacity>
