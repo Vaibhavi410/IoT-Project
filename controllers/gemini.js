@@ -11,7 +11,7 @@ async function callGemini(prompt) {
     `${GEMINI_URL}?key=${apiKey}`,
     {
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.3, maxOutputTokens: 400 },
+      generationConfig: { temperature: 0.3, maxOutputTokens: 1024 },
     },
     { headers: { 'Content-Type': 'application/json' }, timeout: 30000 }
   );
