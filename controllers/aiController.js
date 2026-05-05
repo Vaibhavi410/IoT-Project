@@ -1,9 +1,11 @@
 const axios = require('axios');
+const mongoose = require('mongoose');
 const PestAnalysis = require('../models/PestAnalysis');
 
 const HF_CLASSIFIER_URL =
-  'https://router.huggingface.co/hf-inference/models/linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification';
-const HF_TREATMENT_URL = 'https://router.huggingface.co/hf-inference/models/google/flan-t5-base';
+  'https://router.huggingface.co/hf-inference/models/Diginsa/Plant-Disease-Detection-Project';
+const HF_TEXT_URL =
+  'https://router.huggingface.co/hf-inference/models/Qwen/Qwen2.5-1.5B-Instruct';
 
 function cleanLabel(label) {
   return String(label || '')
@@ -33,34 +35,59 @@ function parseDataUrlBase64(imageBase64) {
   return { contentType: 'image/jpeg', base64: s };
 }
 
-function parseTreatmentText(text) {
+function normalizeSeverityForUi(severityDb) {
+  const s = String(severityDb || '').toLowerCase();
+  if (s === 'high' || s === 'critical') return 'Severe';
+  if (s === 'medium' || s === 'moderate') return 'Moderate';
+  return 'Mild';
+}
+
+function parseQwenSections(text) {
   const raw = String(text || '').trim();
   if (!raw) {
     return { organic: '', chemical: '', prevention: '' };
   }
 
-  const normalized = raw.replace(/\r\n/g, '\n');
+  const normalized = raw.replace(/\r\n/g, '\n').trim();
   const organic =
-    normalized.match(/(?:^|\n)\s*(?:1[\).\-\:]\s*)([\s\S]*?)(?=(?:\n\s*2[\).\-\:])|$)/i)?.[1]?.trim() || '';
+    normalized.match(/organic\s*:\s*([\s\S]*?)(?=\n(?:chemical|prevention)\s*:|$)/i)?.[1]?.trim() ||
+    '';
   const chemical =
-    normalized.match(/(?:^|\n)\s*(?:2[\).\-\:]\s*)([\s\S]*?)(?=(?:\n\s*3[\).\-\:])|$)/i)?.[1]?.trim() || '';
+    normalized.match(/chemical\s*:\s*([\s\S]*?)(?=\n(?:organic|prevention)\s*:|$)/i)?.[1]?.trim() ||
+    '';
   const prevention =
-    normalized.match(/(?:^|\n)\s*(?:3[\).\-\:]\s*)([\s\S]*?)$/i)?.[1]?.trim() || '';
+    normalized.match(/prevention\s*:\s*([\s\S]*?)(?=\n(?:organic|chemical)\s*:|$)/i)?.[1]?.trim() ||
+    '';
 
   if (organic || chemical || prevention) {
     return { organic, chemical, prevention };
   }
 
-  const lines = normalized
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean);
-
   return {
-    organic: lines[0] || raw,
-    chemical: lines[1] || '',
-    prevention: lines[2] || '',
+    organic: normalized,
+    chemical: '',
+    prevention: '',
   };
+}
+
+async function callQwen(prompt) {
+  const response = await axios.post(
+    HF_TEXT_URL,
+    {
+      inputs: prompt,
+      parameters: { max_new_tokens: 250, temperature: 0.3, return_full_text: false },
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      timeout: 30000,
+    }
+  );
+  return Array.isArray(response.data)
+    ? response.data[0]?.generated_text || ''
+    : response.data?.generated_text || '';
 }
 
 // POST /api/ai/analyze-pest
@@ -133,35 +160,24 @@ exports.analyzePest = async (req, res) => {
     const confidencePct = top3Predictions[0]?.confidence ?? Math.round((top3Raw[0]?.score || 0) * 100);
     const severityLevel = severityFromConfidencePct(confidencePct);
 
-    const prompt = `You are an agricultural expert. Pest detected: ${pestName} on ${cropType} in ${location}. Give a short treatment plan with 3 options: 1) Organic method 2) Chemical method 3) Prevention. Keep it simple for farmers.`;
+    const prompt = `You are an agricultural expert.
+Pest detected: ${pestName}
+Crop: ${cropType}
+Location: ${location}
+Give a short treatment plan in exactly this format:
+Organic: <1-2 sentences>
+Chemical: <1-2 sentences>
+Prevention: <1-2 sentences>`;
 
     let treatmentText = '';
     try {
-      const treatmentResp = await axios.post(
-        HF_TREATMENT_URL,
-        { inputs: prompt },
-        {
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          timeout: 60000,
-        }
-      );
-
-      if (typeof treatmentResp?.data === 'string') {
-        treatmentText = treatmentResp.data;
-      } else if (Array.isArray(treatmentResp?.data)) {
-        treatmentText = treatmentResp.data[0]?.generated_text || treatmentResp.data[0]?.summary_text || '';
-      } else if (treatmentResp?.data && typeof treatmentResp.data === 'object') {
-        treatmentText = treatmentResp.data.generated_text || treatmentResp.data.summary_text || '';
-      }
+      treatmentText = await callQwen(prompt);
     } catch (e) {
       console.error('HF treatment error:', e.response?.status, e.response?.data || e.message);
       treatmentText = '';
     }
 
-    const treatment = parseTreatmentText(treatmentText);
+    const treatment = parseQwenSections(treatmentText);
 
     const responseJson = {
       success: true,
@@ -200,8 +216,8 @@ exports.analyzePest = async (req, res) => {
 
     return res.status(200).json(responseJson);
   } catch (error) {
-    console.error("HF Error:", error.response?.data || error.message);
-    return res.status(500).json({ success: false, message: "Analysis failed, please try again" });
+    console.error('HF Error:', error.response?.data || error.message);
+    return res.status(500).json({ success: false, message: 'Analysis failed, please try again' });
   }
 };
 
@@ -217,6 +233,87 @@ exports.getHistory = async (req, res) => {
     return res.status(200).json({ success: true, data: items });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Error fetching history' });
+  }
+};
+
+// GET /api/ai/stats/:userId
+exports.getStats = async (req, res) => {
+  try {
+    const { userId } = req.params || {};
+    if (!userId) {
+      return res.status(400).json({ success: false, message: 'userId is required' });
+    }
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ success: false, message: 'Invalid userId' });
+    }
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
+    const totalScans = await PestAnalysis.countDocuments({ userId });
+    const [severityAgg, topDiseasesAgg, recentScans] = await Promise.all([
+      PestAnalysis.aggregate([
+        { $match: { userId: userObjectId } },
+        { $group: { _id: '$severity', count: { $sum: 1 } } },
+      ]),
+      PestAnalysis.aggregate([
+        { $match: { userId: userObjectId } },
+        { $group: { _id: '$pestName', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 5 },
+      ]),
+      PestAnalysis.find({ userId }).sort({ createdAt: -1 }).limit(5),
+    ]);
+
+    const severityBreakdown = { mild: 0, moderate: 0, severe: 0 };
+    severityAgg.forEach((item) => {
+      const ui = normalizeSeverityForUi(item._id).toLowerCase();
+      if (ui === 'mild') severityBreakdown.mild += item.count;
+      if (ui === 'moderate') severityBreakdown.moderate += item.count;
+      if (ui === 'severe') severityBreakdown.severe += item.count;
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        totalScans,
+        diseaseCounts: topDiseasesAgg.map((d) => ({ name: d._id || 'Unknown', count: d.count })),
+        severityBreakdown,
+        recentScans,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Error fetching stats' });
+  }
+};
+
+// POST /api/ai/chat
+exports.chatAssistant = async (req, res) => {
+  try {
+    const { message, history = [] } = req.body || {};
+    if (!message) {
+      return res.status(400).json({ success: false, message: 'message is required' });
+    }
+    if (!process.env.HUGGINGFACE_API_KEY) {
+      return res.status(501).json({
+        success: false,
+        message: 'HUGGINGFACE_API_KEY not configured on the server.',
+      });
+    }
+
+    const historyText = Array.isArray(history)
+      ? history
+          .slice(-8)
+          .map((m) => `${m.role || 'user'}: ${m.content || ''}`)
+          .join('\n')
+      : '';
+    const prompt = `You are Pestify AI, an agricultural assistant helping farmers in India detect and treat crop diseases.
+${historyText ? `Conversation history:\n${historyText}\n` : ''}Farmer: ${message}
+Assistant:`;
+
+    const generatedText = await callQwen(prompt);
+    return res.status(200).json({ success: true, generated_text: generatedText.trim() });
+  } catch (error) {
+    console.error('HF chat error:', error.response?.data || error.message);
+    return res.status(500).json({ success: false, message: 'Failed to get assistant response' });
   }
 };
 
