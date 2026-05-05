@@ -1,9 +1,58 @@
-import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Colors as COLORS } from '../../constants/theme';
-import { getAdvice } from '../../services/pestAnalysis';
+import { saveScanResult, saveScanResultRemote } from '../../services/historyStorage';
+
+const SOIL_TYPES = ['Clay', 'Sandy', 'Loamy', 'Black', 'Red'];
+
+const SENSOR_DATA = {
+  ph: 6.8,
+  n: 45,
+  p: 22,
+  k: 180,
+  moisture: 68,
+  lastUpdated: '2 mins ago',
+};
+
+const RESULTS = {
+  score: 72,
+  label: 'Good Soil Health',
+  npk: {
+    n: { value: 45, max: 100, label: 'Low', color: COLORS.danger },
+    p: { value: 22, max: 100, label: 'Medium', color: COLORS.warning },
+    k: { value: 80, max: 100, label: 'Good', color: COLORS.primary },
+  },
+  ph: {
+    value: 6.8,
+    text: 'Slightly Acidic — Good for most crops',
+  },
+  crops: [
+    { name: 'Tomato', status: 'good', chip: '✅', why: 'Prefers slightly acidic pH and good moisture.' },
+    { name: 'Wheat', status: 'good', chip: '✅', why: 'Tolerates this pH and benefits from balanced K.' },
+    { name: 'Cotton', status: 'warn', chip: '⚠️', why: 'Needs improved nitrogen for stronger early growth.' },
+    { name: 'Rice', status: 'bad', chip: '❌', why: 'High moisture increases fungal risk; not ideal now.' },
+  ],
+  fertilizer: [
+    { icon: '⚠️', text: 'Add Urea — Nitrogen is low (45 kg/ha)' },
+    { icon: '⚠️', text: 'Apply DAP — Phosphorus needs boost' },
+    { icon: '✅', text: 'Potassium levels are adequate' },
+  ],
+  pestRisk: [
+    { icon: '🔴', text: 'High moisture → Fungal disease risk' },
+    { icon: '🟡', text: 'Low N → Attracts aphids in weak plants' },
+  ],
+};
 
 function goBackCompat(navigation) {
   if (navigation?.canGoBack?.()) {
@@ -26,15 +75,70 @@ function clampNumber(value, min, max) {
 
 export default function SoilAnalysisScreen() {
   const navigation = useNavigation();
-  const [crop, setCrop] = useState('tomato');
-  const [tips, setTips] = useState([]);
+  const [tab, setTab] = useState('manual'); // manual | sensor
+  const [loading, setLoading] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const [selectedWhy, setSelectedWhy] = useState(null);
+
+  const [ph, setPh] = useState('');
+  const [n, setN] = useState('');
+  const [p, setP] = useState('');
+  const [k, setK] = useState('');
+  const [moisture, setMoisture] = useState('');
+  const [soilType, setSoilType] = useState('Loamy');
+  const [soilTypeOpen, setSoilTypeOpen] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      const data = await getAdvice(crop);
-      setTips(data?.tips || []);
-    })();
-  }, [crop]);
+    if (!loading) return undefined;
+    const id = setTimeout(() => {
+      setLoading(false);
+      setShowResults(true);
+    }, 2000);
+    return () => clearTimeout(id);
+  }, [loading]);
+
+  const scoreColor = useMemo(() => COLORS.warning, []);
+
+  function startAnalysis() {
+    setSelectedWhy(null);
+    setShowResults(false);
+    setLoading(true);
+  }
+
+  function useSensorData() {
+    // Disabled for now (future scope)
+  }
+
+  async function handleSaveReport() {
+    try {
+      const payload = {
+        pestName: 'Soil Report',
+        confidence: RESULTS.score || null,
+        severity: RESULTS.label ? RESULTS.label.split(' ')[0].toLowerCase() : 'medium',
+        cropType: RESULTS.crops?.[0]?.name || '',
+        imageUrl: null,
+        recommendations: RESULTS.fertilizer?.map((f) => f.text) || [],
+        notes: RESULTS.pestRisk?.map((p) => p.text).join('; ') || RESULTS.ph?.text || '',
+      };
+
+      // Save locally
+      await saveScanResult(null, payload);
+
+      // Try remote save (non-blocking)
+      saveScanResultRemote(null, payload).then((res) => {
+        if (res) {
+          Alert.alert('Saved', 'Soil report saved to your account');
+        } else {
+          Alert.alert('Saved', 'Soil report saved locally');
+        }
+      }).catch(() => {
+        Alert.alert('Saved', 'Soil report saved locally');
+      });
+    } catch (e) {
+      console.warn('Save soil report failed', e);
+      Alert.alert('Error', 'Failed to save soil report');
+    }
+  }
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
@@ -50,29 +154,272 @@ export default function SoilAnalysisScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Crop-wise Soil Advice</Text>
-          <TextInput
-            style={styles.input}
-            value={crop}
-            onChangeText={(v) => setCrop(v.toLowerCase())}
-            placeholder="Crop type"
-            placeholderTextColor="#8AA08A"
-          />
-          <Text style={styles.smallText}>
-            This module now uses backend AI advice instead of local mock soil datasets.
-          </Text>
-          {tips.length === 0 ? (
-            <Text style={styles.smallText}>No advice available yet.</Text>
-          ) : (
-            tips.map((tip, i) => (
-              <View key={`${tip}-${i}`} style={styles.listRow}>
-                <Text style={styles.listIcon}>•</Text>
-                <Text style={styles.listText}>{tip}</Text>
-              </View>
-            ))
-          )}
+        {/* Tabs */}
+        <View style={styles.tabRow}>
+          <Pressable
+            onPress={() => setTab('manual')}
+            style={[styles.tabBtn, tab === 'manual' && styles.tabBtnActive]}
+          >
+            <Text style={[styles.tabText, tab === 'manual' && styles.tabTextActive]}>
+              Manual Entry
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setTab('sensor')}
+            style={[styles.tabBtn, tab === 'sensor' && styles.tabBtnActive]}
+          >
+            <Text style={[styles.tabText, tab === 'sensor' && styles.tabTextActive]}>
+              Sensor Data
+            </Text>
+          </Pressable>
         </View>
+
+        {/* Manual form */}
+        {tab === 'manual' && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Soil Parameters</Text>
+
+            <View style={styles.formRow}>
+              <Text style={styles.label}>Soil pH (0–14)</Text>
+              <TextInput
+                value={ph}
+                onChangeText={(v) => setPh(clampNumber(v, 0, 14))}
+                keyboardType="numeric"
+                placeholder="6.8"
+                placeholderTextColor="#8AA08A"
+                style={styles.input}
+              />
+            </View>
+
+            <View style={styles.formRow}>
+              <Text style={styles.label}>Nitrogen (N) kg/ha</Text>
+              <TextInput
+                value={n}
+                onChangeText={(v) => setN(clampNumber(v, 0, 999))}
+                keyboardType="numeric"
+                placeholder="45"
+                placeholderTextColor="#8AA08A"
+                style={styles.input}
+              />
+            </View>
+
+            <View style={styles.formRow}>
+              <Text style={styles.label}>Phosphorus (P) kg/ha</Text>
+              <TextInput
+                value={p}
+                onChangeText={(v) => setP(clampNumber(v, 0, 999))}
+                keyboardType="numeric"
+                placeholder="22"
+                placeholderTextColor="#8AA08A"
+                style={styles.input}
+              />
+            </View>
+
+            <View style={styles.formRow}>
+              <Text style={styles.label}>Potassium (K) kg/ha</Text>
+              <TextInput
+                value={k}
+                onChangeText={(v) => setK(clampNumber(v, 0, 999))}
+                keyboardType="numeric"
+                placeholder="180"
+                placeholderTextColor="#8AA08A"
+                style={styles.input}
+              />
+            </View>
+
+            <View style={styles.formRow}>
+              <Text style={styles.label}>Moisture %</Text>
+              <TextInput
+                value={moisture}
+                onChangeText={(v) => setMoisture(clampNumber(v, 0, 100))}
+                keyboardType="numeric"
+                placeholder="68"
+                placeholderTextColor="#8AA08A"
+                style={styles.input}
+              />
+            </View>
+
+            <View style={styles.formRow}>
+              <Text style={styles.label}>Soil Type</Text>
+              <Pressable
+                onPress={() => setSoilTypeOpen((o) => !o)}
+                style={styles.picker}
+              >
+                <Text style={styles.pickerText}>{soilType}</Text>
+                <Text style={styles.pickerChevron}>{soilTypeOpen ? '▲' : '▼'}</Text>
+              </Pressable>
+
+              {soilTypeOpen && (
+                <View style={styles.pickerMenu}>
+                  {SOIL_TYPES.map((opt) => (
+                    <Pressable
+                      key={opt}
+                      onPress={() => {
+                        setSoilType(opt);
+                        setSoilTypeOpen(false);
+                      }}
+                      style={styles.pickerOption}
+                    >
+                      <Text style={styles.pickerOptionText}>{opt}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+            </View>
+
+            <Pressable style={styles.primaryBtn} onPress={startAnalysis} disabled={loading}>
+              <Text style={styles.primaryBtnText}>Analyse Soil</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* Sensor tab */}
+        {tab === 'sensor' && (
+          <View style={styles.card}>
+            <View style={styles.sensorHeaderRow}>
+              <Text style={styles.cardTitle}>Sensor Integration</Text>
+              <Text style={styles.sensorIcon}>📡</Text>
+            </View>
+
+            <Text style={styles.sensorSoonText}>
+              IoT sensor connectivity is coming soon.{'\n'}Use manual entry for now.
+            </Text>
+
+            <View style={styles.comingSoonBadge}>
+              <Text style={styles.comingSoonText}>Coming Soon</Text>
+            </View>
+
+            <Pressable style={[styles.primaryBtn, styles.primaryBtnDisabled]} onPress={useSensorData} disabled>
+              <Text style={[styles.primaryBtnText, styles.primaryBtnTextDisabled]}>Use Sensor Data</Text>
+            </Pressable>
+
+            <Text style={styles.smallText}>Future scope feature</Text>
+          </View>
+        )}
+
+        {/* Loading */}
+        {loading && (
+          <View style={styles.card}>
+            <View style={styles.loadingRow}>
+              <ActivityIndicator color={COLORS.primary} />
+              <Text style={styles.loadingText}>Analysing soil…</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Results */}
+        {showResults && (
+          <>
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Soil Health Score</Text>
+              <View style={styles.scoreRow}>
+                <View style={[styles.scoreCircle, { borderColor: scoreColor }]}>
+                  <Text style={[styles.scoreText, { color: scoreColor }]}>{RESULTS.score}/100</Text>
+                </View>
+                <View style={styles.scoreInfo}>
+                  <Text style={styles.scoreLabel}>{RESULTS.label}</Text>
+                  <Text style={styles.scoreSub}>Medium score — improve N and manage moisture</Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>NPK Status</Text>
+              {(['n', 'p', 'k']).map((key) => {
+                const item = RESULTS.npk[key];
+                const pct = Math.max(0, Math.min(100, (item.value / item.max) * 100));
+                return (
+                  <View key={key} style={styles.barRow}>
+                    <Text style={styles.barLabel}>{key.toUpperCase()}</Text>
+                    <View style={styles.barTrack}>
+                      <View style={[styles.barFill, { width: `${pct}%`, backgroundColor: item.color }]} />
+                    </View>
+                    <Text style={styles.barValue}>
+                      {item.value}/{item.max}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>pH Status</Text>
+              <View style={styles.phRow}>
+                <Text style={styles.phText}>
+                  pH {RESULTS.ph.value} — {RESULTS.ph.text}
+                </Text>
+                <View style={styles.goodBadge}>
+                  <Text style={styles.goodBadgeText}>Good</Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Best Crops for Your Soil</Text>
+              <View style={styles.chipsRow}>
+                {RESULTS.crops.map((c) => {
+                  const bg =
+                    c.status === 'good'
+                      ? '#E8F5E9'
+                      : c.status === 'warn'
+                        ? '#FFF3E0'
+                        : '#FFEBEE';
+                  const border =
+                    c.status === 'good'
+                      ? '#BFD7B8'
+                      : c.status === 'warn'
+                        ? '#FFD7B2'
+                        : '#F7C9CF';
+                  const color =
+                    c.status === 'good'
+                      ? COLORS.primary
+                      : c.status === 'warn'
+                        ? COLORS.warning
+                        : COLORS.danger;
+                  return (
+                    <Pressable
+                      key={c.name}
+                      onPress={() => setSelectedWhy(c.why)}
+                      style={[styles.chip, { backgroundColor: bg, borderColor: border }]}
+                    >
+                      <Text style={[styles.chipText, { color }]}>
+                        {c.name} {c.chip}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              {!!selectedWhy && <Text style={styles.tooltip}>{selectedWhy}</Text>}
+            </View>
+
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Fertilizer Plan</Text>
+              {RESULTS.fertilizer.map((r) => (
+                <View key={r.text} style={styles.listRow}>
+                  <Text style={styles.listIcon}>{r.icon}</Text>
+                  <Text style={styles.listText}>{r.text}</Text>
+                </View>
+              ))}
+            </View>
+
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Soil-Based Pest Risk</Text>
+              {RESULTS.pestRisk.map((r) => (
+                <View key={r.text} style={styles.listRow}>
+                  <Text style={styles.listIcon}>{r.icon}</Text>
+                  <Text style={styles.listText}>{r.text}</Text>
+                </View>
+              ))}
+            </View>
+
+            <Pressable
+              style={[styles.primaryBtn, { marginBottom: 6 }]}
+              onPress={handleSaveReport}
+            >
+              <Text style={styles.primaryBtnText}>Save Report</Text>
+            </Pressable>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

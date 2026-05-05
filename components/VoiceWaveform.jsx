@@ -33,23 +33,21 @@ export default function VoiceWaveform({ active }) {
     }
 
     const startBarLoop = (anim, delayMs) => {
-      const levels = [0.35, 0.8, 0.55, 0.95, 0.45];
-      const run = (step) => {
-        const level = levels[(i + step) % levels.length];
+      const run = () => {
         const up = Animated.timing(anim, {
-          toValue: MIN_H + level * (MAX_H - MIN_H),
-          duration: 220,
+          toValue: MIN_H + Math.random() * (MAX_H - MIN_H),
+          duration: 120 + Math.random() * 180,
           useNativeDriver: false,
         });
         const down = Animated.timing(anim, {
-          toValue: MIN_H + level * (MAX_H - MIN_H) * 0.35,
-          duration: 180,
+          toValue: MIN_H + Math.random() * (MAX_H - MIN_H) * 0.4,
+          duration: 100 + Math.random() * 160,
           useNativeDriver: false,
         });
         return Animated.sequence([up, down]);
       };
       const loop = Animated.loop(
-        Animated.sequence([Animated.delay(delayMs), run(0), run(1), run(2)])
+        Animated.sequence([Animated.delay(delayMs), run(), run(), run()])
       );
       loop.start();
       return loop;

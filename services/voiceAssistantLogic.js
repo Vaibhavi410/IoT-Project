@@ -1,5 +1,3 @@
-import { chatWithAssistant } from './pestAnalysis';
-
 /**
  * Dummy “AI” answers for the voice assistant (no backend).
  * Matches keywords in the farmer’s question and returns a canned reply in the right language.
@@ -74,9 +72,5 @@ export function getSpeechLocale(langCode) {
  */
 export async function queryVoiceAssistant(question, langCode, t) {
   if (!question) return '';
-  const response = await chatWithAssistant(question, []);
-  if (!response?.error && response?.text) {
-    return response.text;
-  }
-  throw new Error('Assistant unavailable');
+  return getDummyVoiceResponse(question, langCode, t);
 }
