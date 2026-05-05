@@ -1,11 +1,10 @@
 const axios = require('axios');
 const mongoose = require('mongoose');
 const PestAnalysis = require('../models/PestAnalysis');
+const { callGemini } = require('./gemini');
 
 const HF_CLASSIFIER_URL =
   'https://router.huggingface.co/hf-inference/models/Diginsa/Plant-Disease-Detection-Project';
-const HF_TEXT_URL =
-  'https://router.huggingface.co/hf-inference/models/Qwen/Qwen2.5-1.5B-Instruct';
 
 function cleanLabel(label) {
   return String(label || '')
@@ -70,25 +69,7 @@ function parseQwenSections(text) {
   };
 }
 
-async function callQwen(prompt) {
-  const response = await axios.post(
-    HF_TEXT_URL,
-    {
-      inputs: prompt,
-      parameters: { max_new_tokens: 250, temperature: 0.3, return_full_text: false },
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      timeout: 30000,
-    }
-  );
-  return Array.isArray(response.data)
-    ? response.data[0]?.generated_text || ''
-    : response.data?.generated_text || '';
-}
+
 
 // POST /api/ai/analyze-pest
 exports.analyzePest = async (req, res) => {
@@ -171,7 +152,7 @@ Prevention: <1-2 sentences>`;
 
     let treatmentText = '';
     try {
-      treatmentText = await callQwen(prompt);
+      treatmentText = await callGemini(prompt);
     } catch (e) {
       console.error('HF treatment error:', e.response?.status, e.response?.data || e.message);
       treatmentText = '';
@@ -309,7 +290,7 @@ exports.chatAssistant = async (req, res) => {
 ${historyText ? `Conversation history:\n${historyText}\n` : ''}Farmer: ${message}
 Assistant:`;
 
-    const generatedText = await callQwen(prompt);
+    const generatedText = await callGemini(prompt);
     return res.status(200).json({ success: true, generated_text: generatedText.trim() });
   } catch (error) {
     console.error('HF chat error:', error.response?.data || error.message);

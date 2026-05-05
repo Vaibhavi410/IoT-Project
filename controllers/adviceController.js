@@ -1,7 +1,6 @@
 const axios = require('axios');
+const { callGemini } = require('./gemini');
 
-const HF_TEXT_URL =
-  'https://router.huggingface.co/hf-inference/models/Qwen/Qwen2.5-1.5B-Instruct';
 const WEATHER_URL = 'https://api.open-meteo.com/v1/forecast';
 
 const adviceCache = new Map();
@@ -24,25 +23,7 @@ async function fetchWeather(latitude, longitude) {
   return data?.current || null;
 }
 
-async function callQwen(prompt) {
-  const response = await axios.post(
-    HF_TEXT_URL,
-    {
-      inputs: prompt,
-      parameters: { max_new_tokens: 250, temperature: 0.3, return_full_text: false },
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      timeout: 30000,
-    }
-  );
-  return Array.isArray(response.data)
-    ? response.data[0]?.generated_text || ''
-    : response.data?.generated_text || '';
-}
+
 
 exports.getAdvice = async (req, res) => {
   try {
@@ -68,7 +49,7 @@ exports.getAdvice = async (req, res) => {
     const prompt = `Give 3 practical farming tips for growing healthy ${crop}. Format: numbered list.
 ${weatherContext}
 Keep each tip short and actionable for Indian farmers.`;
-    const text = await callQwen(prompt);
+    const text = await callGemini(prompt);
     const lines = String(text)
       .split('\n')
       .map((l) => l.trim())
